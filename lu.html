@@ -372,6 +372,7 @@ pre.py .nu{ color: #B0840F; }
     <div class="navgroup">
       <h2>Métodos iterativos</h2>
       <button class="navlink" data-view="jacobi"><span class="glyph" aria-hidden="true">⑦</span>Jacobi</button>
+      <button class="navlink" data-view="gs"><span class="glyph" aria-hidden="true">⑧</span>Gauss-Seidel</button>
     </div>
 
     <div class="navgroup">
@@ -488,6 +489,81 @@ pre.py .nu{ color: #B0840F; }
       <details class="code" style="margin-top:22px">
         <summary>Código en Python — método de Jacobi</summary>
         <pre class="py"><code id="jaCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== GAUSS-SEIDEL ===================== -->
+    <section class="view" id="view-gs">
+      <header>
+        <p class="eyebrow">Sesión 7 · Métodos iterativos</p>
+        <h2>Método de Gauss-Seidel</h2>
+      </header>
+      <p class="lede">También aísla cada incógnita en su propia ecuación, pero a diferencia de Jacobi, actualiza <em>de inmediato</em>: al calcular x<sub>2</sub> ya usa el x<sub>1</sub> recién obtenido en la misma iteración, y así sucesivamente. Esta actualización secuencial suele converger más rápido que Jacobi.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Sistema Ax = b</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="gsN">Número de incógnitas (n)</label><input id="gsN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="gsPreset">Ejemplos de la guía</label><select id="gsPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="gsResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="gsGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Despejar cada incógnita</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Cada ecuación se reescribe dejando una sola incógnita a la izquierda:</p>
+          <div class="formula" id="gsFormulas" style="text-align:left;line-height:1.9"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">3 · Convergencia — dominancia diagonal</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Condición <em>suficiente</em> (no necesaria) para garantizar convergencia: en cada fila, el elemento diagonal debe superar en valor absoluto a la suma de los demás.</p>
+          <div id="gsDomTable"></div>
+          <div class="note" id="gsDomNote"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">4 · Convergencia — criterio de Sassenfeld</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Especialmente útil para Gauss-Seidel: β<sub>1</sub> = (Σ|a<sub>1j</sub>|, j&gt;1) / |a<sub>11</sub>|; para i&gt;1, β<sub>i</sub> = (Σ|a<sub>ij</sub>|β<sub>j</sub>, j&lt;i&nbsp;+&nbsp;Σ|a<sub>ij</sub>|, j&gt;i) / |a<sub>ii</sub>|. Si máx(β<sub>i</sub>) &lt; 1, el método converge — y suele ser un criterio más útil que la dominancia diagonal, porque cubre casos donde esta no se cumple estrictamente.</p>
+          <div id="gsSassTable"></div>
+          <div class="note" id="gsSassNote"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">5 · Iterar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field" style="grid-column:1/-1"><label>Aproximación inicial x⁽⁰⁾</label>
+              <div class="bvec-row" id="gsX0"></div>
+            </div>
+            <div class="field"><label for="gsErrTipo">Tipo de error</label><select id="gsErrTipo">
+              <option value="abs">Absoluto |Δx|</option>
+              <option value="rel">Relativo (%)</option>
+            </select></div>
+            <div class="field"><label for="gsTol" id="gsTolLbl">Tolerancia Et</label><input id="gsTol" type="text" inputmode="decimal" value="0.05"></div>
+            <div class="field"><label for="gsIter">Máx. iteraciones</label><input id="gsIter" type="text" inputmode="numeric" value="50"></div>
+            <div class="field"><label for="gsDec">Decimales</label><input id="gsDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <p class="tcap" id="gsErrHint" style="margin:8px 0 0"></p>
+          <div class="rowend"><button class="btn" id="gsRun" type="button">Iterar Gauss-Seidel</button></div>
+          <div class="errbox" id="gsErr"></div>
+        </div>
+      </div>
+
+      <div id="gsOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — método de Gauss-Seidel</summary>
+        <pre class="py"><code id="gsCode"></code></pre>
       </details>
     </section>
 
@@ -1203,6 +1279,298 @@ function jaRun(){
 }
 document.getElementById("jaRun").addEventListener("click", jaRun);
 document.getElementById("jaCode").innerHTML = hl(JA_PY_CODE);
+
+/* ===================== GAUSS-SEIDEL ===================== */
+const GS_EJEMPLOS = [
+  { t: "Ejemplo resuelto de la guía (3×3) — ε = 0.05 (error absoluto)", n: 3, A: [[5, 1, 1], [3, 4, 1], [3, 3, 6]], b: [5, 6, 0], tol: 0.05, errTipo: "abs" },
+  { t: "Ejemplo de Sassenfeld (3×3) — pon a prueba el criterio β", n: 3, A: [[10, 2, -1], [-1, 8, 2], [2, -1, 9]], b: [7, 4, 5], tol: 0.01, errTipo: "rel" }
+];
+
+const GSE = {
+  n: () => document.getElementById("gsN"),
+  grid: () => document.getElementById("gsGrid"),
+  x0: () => document.getElementById("gsX0"),
+  err: () => document.getElementById("gsErr"),
+  out: () => document.getElementById("gsOut")
+};
+
+function gsBuildGrid(n){
+  n = Math.max(2, Math.min(10, Math.round(n)));
+  GSE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>x<sub>" + (j + 1) + "</sub></th>";
+  head += '<th class="bhead">b</th></tr>';
+  let body = "";
+  for (let i = 0; i < n; i++){
+    body += "<tr><td class=\"mrowlbl\">Ec. " + (i + 1) + "</td>";
+    for (let j = 0; j < n; j++) body += '<td><input id="gs-a-' + i + "-" + j + '" type="text" inputmode="decimal" autocomplete="off" value="' + (i === j ? 1 : 0) + '"></td>';
+    body += '<td class="bcell"><input id="gs-b-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="0"></td></tr>';
+  }
+  GSE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + body + "</tbody>";
+  gsBuildX0(n);
+  gsRenderFormulas();
+  gsRenderDominance();
+  gsRenderSassenfeld();
+}
+function gsBuildX0(n){
+  GSE.x0().innerHTML = Array.from({ length: n }, (_, i) =>
+    '<input id="gs-x0-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="0" aria-label="x0 sub ' + (i + 1) + '">').join("");
+}
+function gsFillValues(n, A, b){
+  for (let i = 0; i < n; i++){
+    for (let j = 0; j < n; j++){ const el = document.getElementById("gs-a-" + i + "-" + j); if (el) el.value = A[i][j]; }
+    const be = document.getElementById("gs-b-" + i); if (be) be.value = b[i];
+  }
+}
+function gsReadMatrix(){
+  const n = Math.max(2, Math.min(10, Math.round(Number(GSE.n().value) || 2)));
+  const A = [], b = [];
+  for (let i = 0; i < n; i++){
+    const row = [];
+    for (let j = 0; j < n; j++){
+      const el = document.getElementById("gs-a-" + i + "-" + j);
+      const v = Number(String(el ? el.value : "").trim().replace(",", "."));
+      if (!isFinite(v)) throw new Error("El coeficiente a" + (i + 1) + (j + 1) + " no es un número válido");
+      row.push(v);
+    }
+    A.push(row);
+    const be = document.getElementById("gs-b-" + i);
+    const vb = Number(String(be ? be.value : "").trim().replace(",", "."));
+    if (!isFinite(vb)) throw new Error("El término independiente b" + (i + 1) + " no es un número válido");
+    b.push(vb);
+  }
+  return { n, A, b };
+}
+function gsReadX0(n){
+  const x0 = [];
+  for (let i = 0; i < n; i++){
+    const el = document.getElementById("gs-x0-" + i);
+    const v = Number(String(el ? el.value : "0").trim().replace(",", "."));
+    if (!isFinite(v)) throw new Error("x₀ sub " + (i + 1) + " no es un número válido");
+    x0.push(v);
+  }
+  return x0;
+}
+
+(function(){
+  const sel = document.getElementById("gsPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' +
+    GS_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = GS_EJEMPLOS[Number(sel.value)];
+    gsBuildGrid(e.n);
+    gsFillValues(e.n, e.A, e.b);
+    document.getElementById("gsTol").value = e.tol;
+    document.getElementById("gsErrTipo").value = e.errTipo;
+    gsSyncErrLabel();
+    gsRenderFormulas();
+    gsRenderDominance();
+    gsRenderSassenfeld();
+  });
+  document.getElementById("gsResize").addEventListener("click", () => gsBuildGrid(Number(GSE.n().value) || 3));
+  document.getElementById("gsGrid").addEventListener("input", () => { gsRenderFormulas(); gsRenderDominance(); gsRenderSassenfeld(); });
+  document.getElementById("gsErrTipo").addEventListener("change", gsSyncErrLabel);
+  gsBuildGrid(3);
+  gsFillValues(3, GS_EJEMPLOS[0].A, GS_EJEMPLOS[0].b);
+  document.getElementById("gsErrTipo").value = GS_EJEMPLOS[0].errTipo;
+  gsSyncErrLabel();
+  gsRenderFormulas();
+  gsRenderDominance();
+  gsRenderSassenfeld();
+})();
+
+function gsSyncErrLabel(){
+  const rel = document.getElementById("gsErrTipo").value === "rel";
+  document.getElementById("gsTolLbl").innerHTML = rel ? "Tolerancia ε (%)" : "Tolerancia Et";
+  document.getElementById("gsErrHint").innerHTML = rel
+    ? "E<sub>i</sub> = |x<sub>i</sub><sup>(k)</sup> − x<sub>i</sub><sup>(k−1)</sup>| / x<sub>i</sub><sup>(k)</sup> × 100 — la fórmula genérica de la guía."
+    : "E<sub>i</sub> = |x<sub>i</sub><sup>(k)</sup> − x<sub>i</sub><sup>(k−1)</sup>| — diferencia directa, sin dividir. Es el que usa el ejemplo resuelto de la guía (converge en x<sup>(3)</sup>≈(1.01, 0.99, −1.00) con ε=0.05).";
+}
+
+/* fórmulas despejadas: x_i = (b_i − Σ a_ij x_j) / a_ii, mostrando los coeficientes reales */
+function gsRenderFormulas(){
+  let A, b, n;
+  try{ ({ n, A, b } = gsReadMatrix()); } catch(e){ document.getElementById("gsFormulas").innerHTML = "<span style='color:var(--ink-4)'>—</span>"; return; }
+  const lines = [];
+  for (let i = 0; i < n; i++){
+    let terms = "";
+    for (let j = 0; j < n; j++){
+      if (j === i || A[i][j] === 0) continue;
+      const sign = A[i][j] > 0 ? " − " : " + ";
+      terms += sign + trimNum(Math.abs(A[i][j]), 6) + "x<sub>" + (j + 1) + "</sub>";
+    }
+    lines.push("x<sub>" + (i + 1) + "</sub> = ( " + trimNum(b[i], 6) + terms + " ) / " + trimNum(A[i][i], 6));
+  }
+  document.getElementById("gsFormulas").innerHTML = lines.join("<br>");
+}
+
+/* dominancia diagonal: condición suficiente, no necesaria */
+function gsRenderDominance(){
+  let A, n;
+  try{ ({ n, A } = gsReadMatrix()); } catch(e){ document.getElementById("gsDomTable").innerHTML = ""; document.getElementById("gsDomNote").innerHTML = ""; return; }
+  let head = '<tr><th class="l">Fila</th><th>|a<sub>ii</sub>|</th><th>Σ|a<sub>ij</sub>|, j≠i</th><th class="l">¿Domina?</th></tr>', body = "";
+  let allOk = true;
+  for (let i = 0; i < n; i++){
+    const diag = Math.abs(A[i][i]);
+    let s = 0; for (let j = 0; j < n; j++) if (j !== i) s += Math.abs(A[i][j]);
+    const ok = diag > s;
+    if (!ok) allOk = false;
+    body += "<tr><td class=\"l\">Ec. " + (i + 1) + "</td><td>" + trimNum(diag, 4) + "</td><td>" + trimNum(s, 4) + "</td><td class=\"l\">" +
+      (ok ? '<span style="color:var(--verde)">Sí</span>' : '<span style="color:var(--warn)">No</span>') + "</td></tr>";
+  }
+  document.getElementById("gsDomTable").innerHTML = '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+  document.getElementById("gsDomNote").innerHTML = allOk
+    ? "<b>Convergencia garantizada</b>La matriz es estrictamente diagonal dominante en todas las filas: Gauss-Seidel converge sí o sí, sin importar el punto de partida."
+    : "<b>Dominancia no garantizada</b>Al menos una fila no domina. Esto <em>no</em> significa que el método vaya a diverger — la dominancia diagonal es una condición suficiente, no necesaria. Revisa el criterio de Sassenfeld abajo: suele ser más decisivo en estos casos.";
+  document.getElementById("gsDomNote").className = "note " + (allOk ? "ok" : "warn");
+}
+
+/* criterio de Sassenfeld: β1 = Σ|a1j|(j>1) / |a11|; βi = (Σ|aij|βj (j<i) + Σ|aij| (j>i)) / |aii|. Converge si máx(βi) < 1 */
+function gsRenderSassenfeld(){
+  let A, n;
+  try{ ({ n, A } = gsReadMatrix()); } catch(e){ document.getElementById("gsSassTable").innerHTML = ""; document.getElementById("gsSassNote").innerHTML = ""; return; }
+  const beta = new Array(n);
+  let head = '<tr><th class="l">i</th><th>β<sub>i</sub></th></tr>', body = "";
+  for (let i = 0; i < n; i++){
+    const diag = Math.abs(A[i][i]);
+    if (diag < 1e-12){ document.getElementById("gsSassTable").innerHTML = ""; document.getElementById("gsSassNote").innerHTML = "<b>No calculable</b>Un elemento diagonal es cero."; document.getElementById("gsSassNote").className = "note warn"; return; }
+    let s = 0;
+    for (let j = 0; j < n; j++){
+      if (j === i) continue;
+      s += j < i ? Math.abs(A[i][j]) * beta[j] : Math.abs(A[i][j]);
+    }
+    beta[i] = s / diag;
+    body += "<tr><td class=\"l\">β<sub>" + (i + 1) + "</sub></td><td>" + trimNum(beta[i], 4) + "</td></tr>";
+  }
+  document.getElementById("gsSassTable").innerHTML = '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+  const maxBeta = Math.max.apply(null, beta);
+  const ok = maxBeta < 1;
+  document.getElementById("gsSassNote").innerHTML = ok
+    ? "<b>Convergencia garantizada</b>máx(β<sub>i</sub>) = " + trimNum(maxBeta, 4) + " &lt; 1: Gauss-Seidel converge, incluso si la dominancia diagonal de la sección anterior no se cumplía estrictamente en todas las filas."
+    : "<b>Sin garantía por Sassenfeld</b>máx(β<sub>i</sub>) = " + trimNum(maxBeta, 4) + " ≥ 1. El método podría no converger; pruébalo igual y observa el error.";
+  document.getElementById("gsSassNote").className = "note " + (ok ? "ok" : "warn");
+}
+
+/* Iteración de Gauss-Seidel: a diferencia de Jacobi, cada x_i se actualiza de inmediato dentro
+   del mismo array "x", así que al calcular x_i para j<i ya se usa el valor NUEVO de esta iteración. */
+function gaussSeidelRun(A, b, x0, tol, maxIter, errTipo){
+  const n = A.length;
+  const rows = [{ k: 0, x: x0.slice(), ex: null, err: null, sol: false }];
+  let x = x0.slice();
+  for (let k = 1; k <= maxIter; k++){
+    const ex = new Array(n);
+    let err = 0;
+    for (let i = 0; i < n; i++){
+      let s = 0;
+      for (let j = 0; j < n; j++) if (j !== i) s += A[i][j] * x[j];
+      const xi = (b[i] - s) / A[i][i];
+      ex[i] = errTipo === "rel"
+        ? (xi !== 0 ? Math.abs((xi - x[i]) / xi) * 100 : Math.abs(xi - x[i]) * 100)
+        : Math.abs(xi - x[i]);
+      if (ex[i] > err) err = ex[i];
+      x[i] = xi;
+    }
+    const sol = err < tol;
+    rows.push({ k, x: x.slice(), ex, err, sol });
+    if (sol) break;
+  }
+  const last = rows[rows.length - 1];
+  return { rows, x: last.x, iters: last.k, err: last.err, converged: last.sol };
+}
+
+const GS_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR -- aqui va TODO lo que cambia
+# ==========================================================
+A = [
+    [5, 1, 1],
+    [3, 4, 1],
+    [3, 3, 6],
+]
+B  = [5, 6, 0]
+X0 = [0, 0, 0]     # <-- aproximacion inicial
+TOL = 0.05         # <-- tolerancia (error absoluto)
+ITER = 50          # <-- maximo de iteraciones
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def gauss_seidel(A, b, x0, tol=0.05, max_iter=50):
+    n = len(A)
+    x = x0[:]
+    print(f"{'k':<3}" + "".join(f"x{i+1:<12}" for i in range(n)) + "Error")
+    print("0  " + "".join(f"{v:<13.6f}" for v in x) + "-")
+    for k in range(1, max_iter + 1):
+        err = 0.0
+        for i in range(n):
+            # los terminos con j < i YA usan el valor nuevo de esta misma iteracion
+            s = sum(A[i][j] * x[j] for j in range(n) if j != i)
+            x_new_i = (b[i] - s) / A[i][i]
+            err = max(err, abs(x_new_i - x[i]))
+            x[i] = x_new_i   # actualizacion inmediata
+
+        print(f"{k:<3}" + "".join(f"{v:<13.6f}" for v in x) + f"{err:.6f}")
+        if err < tol:
+            return x, k, err
+    return x, max_iter, err
+
+raiz, n_iter, error = gauss_seidel(A, B, X0, tol=TOL, max_iter=ITER)
+print(f"\\nSolucion: x = {raiz}   ({n_iter} iteraciones, error {error:.6f})")`;
+
+function gsRun(){
+  GSE.err().textContent = "";
+  try{
+    const { n, A, b } = gsReadMatrix();
+    for (let i = 0; i < n; i++){
+      if (Math.abs(A[i][i]) < 1e-12) throw new Error("a" + (i + 1) + (i + 1) + " (la diagonal de la ecuación " + (i + 1) +
+        ") es cero: Gauss-Seidel despeja x" + (i + 1) + " dividiendo entre ese elemento. Reordena las filas para que ningún término diagonal sea cero.");
+    }
+    const x0 = gsReadX0(n);
+    const errTipo = document.getElementById("gsErrTipo").value;
+    const tol = Number(String(document.getElementById("gsTol").value).replace(",", "."));
+    if (!isFinite(tol) || tol <= 0) throw new Error("La tolerancia debe ser un número mayor que cero");
+    const maxIter = Math.max(1, Math.min(500, Math.round(Number(document.getElementById("gsIter").value) || 50)));
+    const dec = Math.max(0, Math.min(12, Math.round(Number(document.getElementById("gsDec").value) || 6)));
+    const unidad = errTipo === "rel" ? " %" : "";
+
+    const R = gaussSeidelRun(A, b, x0, tol, maxIter, errTipo);
+
+    let head = '<tr><th>k</th>' + Array.from({ length: n }, (_, i) => "<th>x<sub>" + (i + 1) + "</sub></th>").join("") +
+      Array.from({ length: n }, (_, i) => "<th>E<sub>x" + (i + 1) + "</sub>" + (errTipo === "rel" ? " (%)" : "") + "</th>").join("") +
+      "<th>Máx.</th><th>¿Solución?</th></tr>";
+    let body = "";
+    R.rows.forEach(r => {
+      body += '<tr class="' + (r.sol ? "hit" : "") + '"><td>' + r.k + "</td>" +
+        r.x.map(v => "<td>" + trimNum(v, dec) + "</td>").join("") +
+        (r.ex ? r.ex.map(e => "<td>" + trimNum(e, 6) + "</td>").join("") : Array.from({ length: n }, () => "<td>—</td>").join("")) +
+        "<td>" + (r.err === null ? "—" : trimNum(r.err, 6)) + "</td>" +
+        "<td>" + (r.err === null ? "—" : (r.sol ? '<span style="color:var(--verde)">Sí</span>' : "No")) + "</td></tr>";
+    });
+
+    const resid = A.map((row, i) => Math.abs(row.reduce((s, a, j) => s + a * R.x[j], 0) - b[i]));
+    const maxResid = Math.max.apply(null, resid);
+
+    document.getElementById("gsOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Tabla de iteraciones</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>" +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">' + (R.converged ? "Solución del sistema" : "Última estimación — sin converger") + "</div>" +
+          '<div class="answer-val" style="font-size:19px">' + R.x.map((v, i) => "x<sub>" + (i + 1) + "</sub>=" + trimNum(v, dec)).join(",&nbsp; ") + "</div></div>" +
+          '<dl class="answer-facts">' +
+            "<div><dt>Iteraciones</dt><dd>" + R.iters + "</dd></div>" +
+            "<div><dt>Error final</dt><dd>" + trimNum(R.err, 6) + unidad + "</dd></div>" +
+            "<div><dt>Criterio</dt><dd>" + (errTipo === "rel" ? "E &lt; " + tol + " %" : "Et &lt; " + tol) + "</dd></div>" +
+            "<div><dt>Máx. |Ax−b|</dt><dd>" + maxResid.toExponential(2) + "</dd></div>" +
+          "</dl></div>" +
+        (R.converged ? "" : '<div class="note warn" style="margin-top:14px"><b>No alcanzó la tolerancia</b>Se agotaron las ' + maxIter + ' iteraciones. Revisa la dominancia diagonal y el criterio de Sassenfeld, prueba con más iteraciones, o cambia el punto de partida.</div>') +
+      "</div></div>";
+  } catch(e){
+    GSE.err().textContent = e.message;
+    GSE.out().innerHTML = "";
+  }
+}
+document.getElementById("gsRun").addEventListener("click", gsRun);
+document.getElementById("gsCode").innerHTML = hl(GS_PY_CODE);
 
 /* ---- tema ---- */
 const root = document.documentElement;
