@@ -373,6 +373,12 @@ pre.py .nu{ color: #B0840F; }
       <h2>Métodos iterativos</h2>
       <button class="navlink" data-view="jacobi"><span class="glyph" aria-hidden="true">⑦</span>Jacobi</button>
       <button class="navlink" data-view="gs"><span class="glyph" aria-hidden="true">⑧</span>Gauss-Seidel</button>
+      <button class="navlink" data-view="jr"><span class="glyph" aria-hidden="true">⑨</span>Jacobi-Richardson</button>
+    </div>
+
+    <div class="navgroup">
+      <h2>Teoría</h2>
+      <button class="navlink" data-view="cv"><span class="glyph" aria-hidden="true">⑩</span>Convergencia (ρ(T))</button>
     </div>
 
     <div class="navgroup">
@@ -564,6 +570,133 @@ pre.py .nu{ color: #B0840F; }
       <details class="code" style="margin-top:22px">
         <summary>Código en Python — método de Gauss-Seidel</summary>
         <pre class="py"><code id="gsCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== JACOBI-RICHARDSON ===================== -->
+    <section class="view" id="view-jr">
+      <header>
+        <p class="eyebrow">Sesión 7 · Métodos iterativos</p>
+        <h2>Método de Jacobi-Richardson</h2>
+      </header>
+      <p class="lede">Es el mismo Jacobi (actualización simultánea, A = L + D + R), pero presentado desde la iteración de Richardson: se normaliza cada fila entre su propio pivote (a*<sub>ij</sub> = a<sub>ij</sub>/a<sub>ii</sub>) y el error se mide con la <em>norma infinito</em> de todo el vector, no incógnita por incógnita.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Sistema Ax = b</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="jrN">Número de incógnitas (n)</label><input id="jrN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="jrPreset">Ejemplos de la guía</label><select id="jrPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="jrResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="jrGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Despejar cada incógnita</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Cada ecuación se reescribe dejando una sola incógnita a la izquierda:</p>
+          <div class="formula" id="jrFormulas" style="text-align:left;line-height:1.9"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">3 · Convergencia — criterio de las líneas</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Con a*<sub>ij</sub> = a<sub>ij</sub> / a<sub>ii</sub>: si en cada fila Σ|a*<sub>ij</sub>| (j≠i) &lt; 1, el método converge. Es la misma condición que la dominancia diagonal, expresada como fracción del pivote.</p>
+          <div id="jrLinTable"></div>
+          <div class="note" id="jrLinNote"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">4 · Convergencia — criterio de columna</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Alternativa cuando el criterio de las líneas no alcanza: se suma por <em>columna</em> en vez de por fila. Si máx<sub>j</sub> Σ|a*<sub>ij</sub>| (i≠j) &lt; 1, el método también converge.</p>
+          <div id="jrColTable"></div>
+          <div class="note" id="jrColNote"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">5 · Iterar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field" style="grid-column:1/-1"><label>Aproximación inicial x⁽⁰⁾</label>
+              <div class="bvec-row" id="jrX0"></div>
+            </div>
+            <div class="field"><label for="jrTol">Tolerancia ε</label><input id="jrTol" type="text" inputmode="decimal" value="0.01"></div>
+            <div class="field"><label for="jrIter">Máx. iteraciones</label><input id="jrIter" type="text" inputmode="numeric" value="50"></div>
+            <div class="field"><label for="jrDec">Decimales</label><input id="jrDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <p class="tcap" style="margin:8px 0 0">E = ‖x<sup>(k)</sup> − x<sup>(k−1)</sup>‖<sub>∞</sub> / ‖x<sup>(k)</sup>‖<sub>∞</sub> — un único error para todo el vector (el mayor cambio absoluto, dividido entre la mayor componente de la nueva iteración).</p>
+          <div class="rowend"><button class="btn" id="jrRun" type="button">Iterar Jacobi-Richardson</button></div>
+          <div class="errbox" id="jrErr"></div>
+        </div>
+      </div>
+
+      <div id="jrOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — método de Jacobi-Richardson</summary>
+        <pre class="py"><code id="jrCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== CONVERGENCIA (RADIO ESPECTRAL) ===================== -->
+    <section class="view" id="view-cv">
+      <header>
+        <p class="eyebrow">Sesión 7 · Teoría de convergencia</p>
+        <h2>Convergencia — radio espectral ρ(T)</h2>
+      </header>
+      <p class="lede">Dominancia diagonal, Sassenfeld y los criterios de líneas/columna son condiciones <em>suficientes</em>: si se cumplen, garantizan convergencia, pero si fallan no prueban nada. El criterio definitivo (necesario y suficiente) es la matriz de iteración T: el método converge <em>si y solo si</em> ρ(T) — su radio espectral, el mayor módulo de sus valores propios — es menor que 1.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Sistema Ax = b</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="cvN">Número de incógnitas (n)</label><input id="cvN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="cvPreset">Ejemplos ya vistos</label><select id="cvPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="cvResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="cvGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Elegir método y calcular ρ(T)</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="cvMethod">Matriz de iteración de</label><select id="cvMethod">
+              <option value="jacobi">Jacobi — T = −D⁻¹(L+R)</option>
+              <option value="gs">Gauss-Seidel — T = −(D+L)⁻¹R</option>
+            </select></div>
+            <div class="field"><button class="btn" id="cvRun" type="button" style="margin-top:19px">Calcular ρ(T)</button></div>
+          </div>
+          <p class="tcap" style="margin:8px 0 0">ρ(T) se estima numéricamente con el <b>método de la potencia</b> (multiplicar T por un vector muchas veces y observar cuánto crece su norma) — el mismo enfoque práctico que sugiere la guía cuando pide "calcular o estimar ρ(T)". Con valores propios complejos dominantes se usa la media geométrica de varias iteraciones para que no oscile.</p>
+          <div class="errbox" id="cvErr"></div>
+          <div id="cvOut"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">3 · ¿Qué hacer si un criterio no se cumple?</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Si la dominancia diagonal (o Sassenfeld) falla, <b>no</b> concluyas "el método no converge" — solo significa que ese criterio no lo garantiza. Según la guía, el camino correcto es:</p>
+          <ol class="prose" style="margin:0;padding-left:20px;line-height:1.9">
+            <li>Calcular la matriz de iteración T.</li>
+            <li>Calcular o estimar ρ(T).</li>
+            <li>Verificar si ‖T‖ &lt; 1 (alguna norma matricial).</li>
+            <li>En Gauss-Seidel, aplicar el criterio de Sassenfeld.</li>
+            <li>Analizar experimentalmente la evolución del error o residuo iterando igual.</li>
+          </ol>
+        </div>
+      </div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — radio espectral por el método de la potencia</summary>
+        <pre class="py"><code id="cvCode"></code></pre>
       </details>
     </section>
 
@@ -1571,6 +1704,491 @@ function gsRun(){
 }
 document.getElementById("gsRun").addEventListener("click", gsRun);
 document.getElementById("gsCode").innerHTML = hl(GS_PY_CODE);
+
+/* ===================== JACOBI-RICHARDSON ===================== */
+const JR_EJEMPLOS = [
+  { t: "Ejemplo de la guía (3×3) — ε = 10⁻²", n: 3, A: [[10, 2, 1], [1, 5, 1], [2, 3, 10]], b: [7, -8, 6], x0: [0.7, -1.6, 0.6], tol: 0.01 }
+];
+
+const JRE = {
+  n: () => document.getElementById("jrN"),
+  grid: () => document.getElementById("jrGrid"),
+  x0: () => document.getElementById("jrX0"),
+  err: () => document.getElementById("jrErr"),
+  out: () => document.getElementById("jrOut")
+};
+
+function jrBuildGrid(n){
+  n = Math.max(2, Math.min(10, Math.round(n)));
+  JRE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>x<sub>" + (j + 1) + "</sub></th>";
+  head += '<th class="bhead">b</th></tr>';
+  let body = "";
+  for (let i = 0; i < n; i++){
+    body += "<tr><td class=\"mrowlbl\">Ec. " + (i + 1) + "</td>";
+    for (let j = 0; j < n; j++) body += '<td><input id="jr-a-' + i + "-" + j + '" type="text" inputmode="decimal" autocomplete="off" value="' + (i === j ? 1 : 0) + '"></td>';
+    body += '<td class="bcell"><input id="jr-b-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="0"></td></tr>';
+  }
+  JRE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + body + "</tbody>";
+  jrBuildX0(n, null);
+  jrRenderFormulas();
+  jrRenderLineas();
+  jrRenderColumnas();
+}
+function jrBuildX0(n, x0){
+  JRE.x0().innerHTML = Array.from({ length: n }, (_, i) =>
+    '<input id="jr-x0-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="' + (x0 ? x0[i] : 0) + '" aria-label="x0 sub ' + (i + 1) + '">').join("");
+}
+function jrFillValues(n, A, b){
+  for (let i = 0; i < n; i++){
+    for (let j = 0; j < n; j++){ const el = document.getElementById("jr-a-" + i + "-" + j); if (el) el.value = A[i][j]; }
+    const be = document.getElementById("jr-b-" + i); if (be) be.value = b[i];
+  }
+}
+function jrReadMatrix(){
+  const n = Math.max(2, Math.min(10, Math.round(Number(JRE.n().value) || 2)));
+  const A = [], b = [];
+  for (let i = 0; i < n; i++){
+    const row = [];
+    for (let j = 0; j < n; j++){
+      const el = document.getElementById("jr-a-" + i + "-" + j);
+      const v = Number(String(el ? el.value : "").trim().replace(",", "."));
+      if (!isFinite(v)) throw new Error("El coeficiente a" + (i + 1) + (j + 1) + " no es un número válido");
+      row.push(v);
+    }
+    A.push(row);
+    const be = document.getElementById("jr-b-" + i);
+    const vb = Number(String(be ? be.value : "").trim().replace(",", "."));
+    if (!isFinite(vb)) throw new Error("El término independiente b" + (i + 1) + " no es un número válido");
+    b.push(vb);
+  }
+  return { n, A, b };
+}
+function jrReadX0(n){
+  const x0 = [];
+  for (let i = 0; i < n; i++){
+    const el = document.getElementById("jr-x0-" + i);
+    const v = Number(String(el ? el.value : "0").trim().replace(",", "."));
+    if (!isFinite(v)) throw new Error("x₀ sub " + (i + 1) + " no es un número válido");
+    x0.push(v);
+  }
+  return x0;
+}
+
+(function(){
+  const sel = document.getElementById("jrPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' +
+    JR_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = JR_EJEMPLOS[Number(sel.value)];
+    jrBuildGrid(e.n);
+    jrFillValues(e.n, e.A, e.b);
+    jrBuildX0(e.n, e.x0);
+    document.getElementById("jrTol").value = e.tol;
+    jrRenderFormulas();
+    jrRenderLineas();
+    jrRenderColumnas();
+  });
+  document.getElementById("jrResize").addEventListener("click", () => jrBuildGrid(Number(JRE.n().value) || 3));
+  document.getElementById("jrGrid").addEventListener("input", () => { jrRenderFormulas(); jrRenderLineas(); jrRenderColumnas(); });
+  jrBuildGrid(3);
+  jrFillValues(3, JR_EJEMPLOS[0].A, JR_EJEMPLOS[0].b);
+  jrBuildX0(3, JR_EJEMPLOS[0].x0);
+  document.getElementById("jrTol").value = JR_EJEMPLOS[0].tol;
+  jrRenderFormulas();
+  jrRenderLineas();
+  jrRenderColumnas();
+})();
+
+/* fórmulas despejadas: x_i = (b_i − Σ a_ij x_j) / a_ii, mostrando los coeficientes reales */
+function jrRenderFormulas(){
+  let A, b, n;
+  try{ ({ n, A, b } = jrReadMatrix()); } catch(e){ document.getElementById("jrFormulas").innerHTML = "<span style='color:var(--ink-4)'>—</span>"; return; }
+  const lines = [];
+  for (let i = 0; i < n; i++){
+    let terms = "";
+    for (let j = 0; j < n; j++){
+      if (j === i || A[i][j] === 0) continue;
+      const sign = A[i][j] > 0 ? " − " : " + ";
+      terms += sign + trimNum(Math.abs(A[i][j]), 6) + "x<sub>" + (j + 1) + "</sub>";
+    }
+    lines.push("x<sub>" + (i + 1) + "</sub> = ( " + trimNum(b[i], 6) + terms + " ) / " + trimNum(A[i][i], 6));
+  }
+  document.getElementById("jrFormulas").innerHTML = lines.join("<br>");
+}
+
+/* criterio de las líneas: por fila, Σ|a_ij|/|a_ii| (j≠i) < 1 — equivalente a dominancia diagonal */
+function jrRenderLineas(){
+  let A, n;
+  try{ ({ n, A } = jrReadMatrix()); } catch(e){ document.getElementById("jrLinTable").innerHTML = ""; document.getElementById("jrLinNote").innerHTML = ""; return; }
+  let head = '<tr><th class="l">Fila</th><th>Σ|a<sub>ij</sub>|/|a<sub>ii</sub>|, j≠i</th><th class="l">¿&lt;1?</th></tr>', body = "";
+  let allOk = true, maxVal = 0;
+  for (let i = 0; i < n; i++){
+    const diag = Math.abs(A[i][i]);
+    let s = 0;
+    if (diag > 1e-12){ for (let j = 0; j < n; j++) if (j !== i) s += Math.abs(A[i][j]) / diag; } else s = Infinity;
+    if (s > maxVal) maxVal = s;
+    const ok = s < 1;
+    if (!ok) allOk = false;
+    body += "<tr><td class=\"l\">Ec. " + (i + 1) + "</td><td>" + (isFinite(s) ? trimNum(s, 4) : "—") + "</td><td class=\"l\">" +
+      (ok ? '<span style="color:var(--verde)">Sí</span>' : '<span style="color:var(--warn)">No</span>') + "</td></tr>";
+  }
+  document.getElementById("jrLinTable").innerHTML = '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+  document.getElementById("jrLinNote").innerHTML = allOk
+    ? "<b>Convergencia garantizada</b>máx = " + trimNum(maxVal, 4) + " &lt; 1 en todas las filas: el método converge."
+    : "<b>Sin garantía por líneas</b>máx = " + trimNum(maxVal, 4) + " ≥ 1 en al menos una fila. Revisa el criterio de columna abajo.";
+  document.getElementById("jrLinNote").className = "note " + (allOk ? "ok" : "warn");
+}
+
+/* criterio de columna: por columna, Σ|a_ij|/|a_ii| (i≠j) < 1 — usa el pivote de CADA fila i, sumado por columna j */
+function jrRenderColumnas(){
+  let A, n;
+  try{ ({ n, A } = jrReadMatrix()); } catch(e){ document.getElementById("jrColTable").innerHTML = ""; document.getElementById("jrColNote").innerHTML = ""; return; }
+  let head = '<tr><th class="l">Columna</th><th>Σ|a<sub>ij</sub>|/|a<sub>ii</sub>|, i≠j</th><th class="l">¿&lt;1?</th></tr>', body = "";
+  let allOk = true, maxVal = 0;
+  for (let j = 0; j < n; j++){
+    let s = 0, bad = false;
+    for (let i = 0; i < n; i++){
+      if (i === j) continue;
+      const diag = Math.abs(A[i][i]);
+      if (diag < 1e-12){ bad = true; break; }
+      s += Math.abs(A[i][j]) / diag;
+    }
+    if (bad) s = Infinity;
+    if (s > maxVal) maxVal = s;
+    const ok = s < 1;
+    if (!ok) allOk = false;
+    body += "<tr><td class=\"l\">Col. " + (j + 1) + "</td><td>" + (isFinite(s) ? trimNum(s, 4) : "—") + "</td><td class=\"l\">" +
+      (ok ? '<span style="color:var(--verde)">Sí</span>' : '<span style="color:var(--warn)">No</span>') + "</td></tr>";
+  }
+  document.getElementById("jrColTable").innerHTML = '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+  document.getElementById("jrColNote").innerHTML = allOk
+    ? "<b>Convergencia garantizada</b>máx = " + trimNum(maxVal, 4) + " &lt; 1 en todas las columnas: el método converge."
+    : "<b>Sin garantía por columna</b>máx = " + trimNum(maxVal, 4) + " ≥ 1 en al menos una columna. Si tampoco el criterio de las líneas se cumple, no hay garantía previa — itera y observa si el error baja.";
+  document.getElementById("jrColNote").className = "note " + (allOk ? "ok" : "warn");
+}
+
+/* Iteración de Jacobi-Richardson: actualización simultánea (igual que Jacobi), pero el error es
+   la norma infinito del cambio, normalizada por la norma infinito del vector nuevo:
+   E = max_i |x_i^(k) - x_i^(k-1)| / max_i |x_i^(k)| */
+function jacobiRichardsonRun(A, b, x0, tol, maxIter){
+  const n = A.length;
+  const rows = [{ k: 0, x: x0.slice(), err: null, sol: false }];
+  let x = x0.slice();
+  for (let k = 1; k <= maxIter; k++){
+    const xn = new Array(n);
+    for (let i = 0; i < n; i++){
+      let s = 0;
+      for (let j = 0; j < n; j++) if (j !== i) s += A[i][j] * x[j];
+      xn[i] = (b[i] - s) / A[i][i];
+    }
+    let maxDiff = 0, maxX = 0;
+    for (let i = 0; i < n; i++){
+      maxDiff = Math.max(maxDiff, Math.abs(xn[i] - x[i]));
+      maxX = Math.max(maxX, Math.abs(xn[i]));
+    }
+    const err = maxX > 0 ? maxDiff / maxX : maxDiff;
+    const sol = err < tol;
+    rows.push({ k, x: xn, err, sol });
+    x = xn;
+    if (sol) break;
+  }
+  const last = rows[rows.length - 1];
+  return { rows, x: last.x, iters: last.k, err: last.err, converged: last.sol };
+}
+
+const JR_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR -- aqui va TODO lo que cambia
+# ==========================================================
+A = [
+    [10, 2, 1],
+    [1,  5, 1],
+    [2,  3, 10],
+]
+B  = [7, -8, 6]
+X0 = [0.7, -1.6, 0.6]   # <-- aproximacion inicial
+TOL = 0.01               # <-- tolerancia (norma infinito relativa)
+ITER = 50                # <-- maximo de iteraciones
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def jacobi_richardson(A, b, x0, tol=0.01, max_iter=50):
+    n = len(A)
+    x = x0[:]
+    print(f"{'k':<3}" + "".join(f"x{i+1:<12}" for i in range(n)) + "Error")
+    print("0  " + "".join(f"{v:<13.6f}" for v in x) + "-")
+    for k in range(1, max_iter + 1):
+        x_new = [0.0] * n
+        for i in range(n):
+            # todos los terminos usan SOLO el vector "x" de la iteracion anterior (simultaneo, como Jacobi)
+            s = sum(A[i][j] * x[j] for j in range(n) if j != i)
+            x_new[i] = (b[i] - s) / A[i][i]
+
+        # error = norma infinito del cambio, normalizada por la norma infinito del vector nuevo
+        max_diff = max(abs(x_new[i] - x[i]) for i in range(n))
+        max_x = max(abs(v) for v in x_new)
+        err = max_diff / max_x if max_x > 0 else max_diff
+
+        print(f"{k:<3}" + "".join(f"{v:<13.6f}" for v in x_new) + f"{err:.6f}")
+        x = x_new
+        if err < tol:
+            return x, k, err
+    return x, max_iter, err
+
+raiz, n_iter, error = jacobi_richardson(A, B, X0, tol=TOL, max_iter=ITER)
+print(f"\\nSolucion: x = {raiz}   ({n_iter} iteraciones, error {error:.6f})")`;
+
+function jrRun(){
+  JRE.err().textContent = "";
+  try{
+    const { n, A, b } = jrReadMatrix();
+    for (let i = 0; i < n; i++){
+      if (Math.abs(A[i][i]) < 1e-12) throw new Error("a" + (i + 1) + (i + 1) + " (la diagonal de la ecuación " + (i + 1) +
+        ") es cero: Jacobi-Richardson despeja x" + (i + 1) + " dividiendo entre ese elemento. Reordena las filas para que ningún término diagonal sea cero.");
+    }
+    const x0 = jrReadX0(n);
+    const tol = Number(String(document.getElementById("jrTol").value).replace(",", "."));
+    if (!isFinite(tol) || tol <= 0) throw new Error("La tolerancia debe ser un número mayor que cero");
+    const maxIter = Math.max(1, Math.min(500, Math.round(Number(document.getElementById("jrIter").value) || 50)));
+    const dec = Math.max(0, Math.min(12, Math.round(Number(document.getElementById("jrDec").value) || 6)));
+
+    const R = jacobiRichardsonRun(A, b, x0, tol, maxIter);
+
+    let head = '<tr><th>k</th>' + Array.from({ length: n }, (_, i) => "<th>x<sub>" + (i + 1) + "</sub></th>").join("") + "<th>E</th><th>¿Solución?</th></tr>";
+    let body = "";
+    R.rows.forEach(r => {
+      body += '<tr class="' + (r.sol ? "hit" : "") + '"><td>' + r.k + "</td>" +
+        r.x.map(v => "<td>" + trimNum(v, dec) + "</td>").join("") +
+        "<td>" + (r.err === null ? "—" : trimNum(r.err, 6)) + "</td>" +
+        "<td>" + (r.err === null ? "—" : (r.sol ? '<span style="color:var(--verde)">Sí</span>' : "No")) + "</td></tr>";
+    });
+
+    const resid = A.map((row, i) => Math.abs(row.reduce((s, a, j) => s + a * R.x[j], 0) - b[i]));
+    const maxResid = Math.max.apply(null, resid);
+
+    document.getElementById("jrOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Tabla de iteraciones</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>" +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">' + (R.converged ? "Solución del sistema" : "Última estimación — sin converger") + "</div>" +
+          '<div class="answer-val" style="font-size:19px">' + R.x.map((v, i) => "x<sub>" + (i + 1) + "</sub>=" + trimNum(v, dec)).join(",&nbsp; ") + "</div></div>" +
+          '<dl class="answer-facts">' +
+            "<div><dt>Iteraciones</dt><dd>" + R.iters + "</dd></div>" +
+            "<div><dt>Error final</dt><dd>" + trimNum(R.err, 6) + "</dd></div>" +
+            "<div><dt>Criterio</dt><dd>E &lt; " + tol + "</dd></div>" +
+            "<div><dt>Máx. |Ax−b|</dt><dd>" + maxResid.toExponential(2) + "</dd></div>" +
+          "</dl></div>" +
+        (R.converged ? "" : '<div class="note warn" style="margin-top:14px"><b>No alcanzó la tolerancia</b>Se agotaron las ' + maxIter + ' iteraciones. Revisa los criterios de convergencia, prueba con más iteraciones, o cambia el punto de partida.</div>') +
+      "</div></div>";
+  } catch(e){
+    JRE.err().textContent = e.message;
+    JRE.out().innerHTML = "";
+  }
+}
+document.getElementById("jrRun").addEventListener("click", jrRun);
+document.getElementById("jrCode").innerHTML = hl(JR_PY_CODE);
+
+/* ===================== CONVERGENCIA (RADIO ESPECTRAL) ===================== */
+const CV_EJEMPLOS = [
+  { t: "Gauss-Seidel — ejemplo de la guía (5,1,1/3,4,1/3,3,6)", n: 3, A: [[5, 1, 1], [3, 4, 1], [3, 3, 6]], b: [5, 6, 0] },
+  { t: "Sassenfeld — ejemplo de la guía (10,2,-1/-1,8,2/2,-1,9)", n: 3, A: [[10, 2, -1], [-1, 8, 2], [2, -1, 9]], b: [7, 4, 5] },
+  { t: "Jacobi-Richardson — ejemplo de la guía (10,2,1/1,5,1/2,3,10)", n: 3, A: [[10, 2, 1], [1, 5, 1], [2, 3, 10]], b: [7, -8, 6] }
+];
+
+const CVE = {
+  n: () => document.getElementById("cvN"),
+  grid: () => document.getElementById("cvGrid"),
+  err: () => document.getElementById("cvErr"),
+  out: () => document.getElementById("cvOut")
+};
+
+function cvBuildGrid(n){
+  n = Math.max(2, Math.min(8, Math.round(n)));
+  CVE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>x<sub>" + (j + 1) + "</sub></th>";
+  head += '<th class="bhead">b</th></tr>';
+  let body = "";
+  for (let i = 0; i < n; i++){
+    body += "<tr><td class=\"mrowlbl\">Ec. " + (i + 1) + "</td>";
+    for (let j = 0; j < n; j++) body += '<td><input id="cv-a-' + i + "-" + j + '" type="text" inputmode="decimal" autocomplete="off" value="' + (i === j ? 1 : 0) + '"></td>';
+    body += '<td class="bcell"><input id="cv-b-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="0"></td></tr>';
+  }
+  CVE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + body + "</tbody>";
+}
+function cvFillValues(n, A, b){
+  for (let i = 0; i < n; i++){
+    for (let j = 0; j < n; j++){ const el = document.getElementById("cv-a-" + i + "-" + j); if (el) el.value = A[i][j]; }
+    const be = document.getElementById("cv-b-" + i); if (be) be.value = b[i];
+  }
+}
+function cvReadMatrix(){
+  const n = Math.max(2, Math.min(8, Math.round(Number(CVE.n().value) || 2)));
+  const A = [];
+  for (let i = 0; i < n; i++){
+    const row = [];
+    for (let j = 0; j < n; j++){
+      const el = document.getElementById("cv-a-" + i + "-" + j);
+      const v = Number(String(el ? el.value : "").trim().replace(",", "."));
+      if (!isFinite(v)) throw new Error("El coeficiente a" + (i + 1) + (j + 1) + " no es un número válido");
+      row.push(v);
+    }
+    A.push(row);
+  }
+  return { n, A };
+}
+
+(function(){
+  const sel = document.getElementById("cvPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' +
+    CV_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = CV_EJEMPLOS[Number(sel.value)];
+    cvBuildGrid(e.n);
+    cvFillValues(e.n, e.A, e.b);
+  });
+  document.getElementById("cvResize").addEventListener("click", () => cvBuildGrid(Number(CVE.n().value) || 3));
+  cvBuildGrid(3);
+  cvFillValues(3, CV_EJEMPLOS[0].A, CV_EJEMPLOS[0].b);
+})();
+
+/* T de Jacobi: T = -D^-1 (L+R) = -D^-1 (A - D) */
+function jacobiIterationMatrix(A){
+  const n = A.length;
+  return A.map((row, i) => row.map((a, j) => i === j ? 0 : -a / A[i][i]));
+}
+
+/* T de Gauss-Seidel: (D+L) x = -R e_c, resuelto columna por columna vía sustitución hacia adelante */
+function gsIterationMatrix(A){
+  const n = A.length;
+  const T = Array.from({ length: n }, () => new Array(n).fill(0));
+  for (let c = 0; c < n; c++){
+    const rhs = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) rhs[i] = (c > i) ? -A[i][c] : 0;
+    const x = new Array(n);
+    for (let i = 0; i < n; i++){
+      let s = 0;
+      for (let j = 0; j < i; j++) s += A[i][j] * x[j];
+      x[i] = (rhs[i] - s) / A[i][i];
+    }
+    for (let i = 0; i < n; i++) T[i][c] = x[i];
+  }
+  return T;
+}
+
+/* Radio espectral por el método de la potencia: se normaliza el vector en cada paso y se promedia
+   (media geométrica) el crecimiento de la norma en una ventana final, para que no oscile si el
+   valor propio dominante es un par complejo conjugado. */
+function spectralRadius(T, warmup, avgSteps){
+  warmup = warmup || 150; avgSteps = avgSteps || 60;
+  const n = T.length;
+  let v = new Array(n).fill(1);
+  let norm = Math.sqrt(v.reduce((s, x) => s + x * x, 0));
+  v = v.map(x => x / norm);
+  const logs = [];
+  for (let k = 0; k < warmup + avgSteps; k++){
+    const w = T.map(row => row.reduce((s, a, j) => s + a * v[j], 0));
+    const wn = Math.sqrt(w.reduce((s, x) => s + x * x, 0));
+    if (wn < 1e-14) return 0;
+    if (k >= warmup) logs.push(Math.log(wn));
+    v = w.map(x => x / wn);
+  }
+  return Math.exp(logs.reduce((s, x) => s + x, 0) / logs.length);
+}
+
+function matDispSimple(M){
+  return '<div class="tablewrap"><table class="data"><tbody>' +
+    M.map(row => "<tr>" + row.map(v => "<td>" + trimNum(v, 5) + "</td>").join("") + "</tr>").join("") +
+    "</tbody></table></div>";
+}
+
+const CV_PY_CODE = `import math
+
+def jacobi_T(A):
+    n = len(A)
+    return [[0 if i == j else -A[i][j] / A[i][i] for j in range(n)] for i in range(n)]
+
+def gs_T(A):
+    n = len(A)
+    T = [[0.0] * n for _ in range(n)]
+    for c in range(n):
+        rhs = [(-A[i][c] if c > i else 0) for i in range(n)]
+        x = [0.0] * n
+        for i in range(n):
+            s = sum(A[i][j] * x[j] for j in range(i))
+            x[i] = (rhs[i] - s) / A[i][i]
+        for i in range(n):
+            T[i][c] = x[i]
+    return T
+
+def spectral_radius(T, warmup=150, avg_steps=60):
+    n = len(T)
+    v = [1.0] * n
+    norm = math.sqrt(sum(x * x for x in v))
+    v = [x / norm for x in v]
+    logs = []
+    for k in range(warmup + avg_steps):
+        w = [sum(T[i][j] * v[j] for j in range(n)) for i in range(n)]
+        wn = math.sqrt(sum(x * x for x in w))
+        if wn < 1e-14:
+            return 0.0
+        if k >= warmup:
+            logs.append(math.log(wn))
+        v = [x / wn for x in w]
+    return math.exp(sum(logs) / len(logs))
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+A = [
+    [5, 1, 1],
+    [3, 4, 1],
+    [3, 3, 6],
+]
+
+T_jacobi = jacobi_T(A)
+T_gs = gs_T(A)
+print("rho(T_Jacobi) =", spectral_radius(T_jacobi))
+print("rho(T_Gauss-Seidel) =", spectral_radius(T_gs))`;
+
+function cvRun(){
+  CVE.err().textContent = "";
+  try{
+    const { n, A } = cvReadMatrix();
+    for (let i = 0; i < n; i++){
+      if (Math.abs(A[i][i]) < 1e-12) throw new Error("a" + (i + 1) + (i + 1) + " (la diagonal de la ecuación " + (i + 1) +
+        ") es cero: la matriz de iteración necesita dividir entre cada elemento diagonal. Reordena las filas para que ningún término diagonal sea cero.");
+    }
+    const method = document.getElementById("cvMethod").value;
+    const T = method === "gs" ? gsIterationMatrix(A) : jacobiIterationMatrix(A);
+    const rho = spectralRadius(T);
+    const ok = rho < 1;
+    const nombre = method === "gs" ? "Gauss-Seidel" : "Jacobi";
+
+    CVE.out().innerHTML =
+      '<div class="panel" style="margin-top:16px"><div class="panel-head"><h3 class="sec">Matriz de iteración T (' + nombre + ')</h3></div><div class="panel-body">' +
+        matDispSimple(T) +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">Radio espectral estimado</div>' +
+          '<div class="answer-val" style="font-size:19px">ρ(T) ≈ ' + trimNum(rho, 6) + "</div></div>" +
+          '<dl class="answer-facts"><div><dt>Método</dt><dd>' + nombre + "</dd></div><div><dt>Criterio</dt><dd>ρ(T) &lt; 1</dd></div></dl></div>" +
+        '<div class="note ' + (ok ? "ok" : "warn") + '" style="margin-top:14px"><b>' + (ok ? "Convergencia garantizada" : "No converge") + "</b>" +
+          (ok
+            ? "ρ(T) = " + trimNum(rho, 6) + " &lt; 1: este es el criterio necesario y suficiente, así que " + nombre + " converge para cualquier x⁽⁰⁾, sin importar lo que hayan dicho la dominancia diagonal o Sassenfeld."
+            : "ρ(T) = " + trimNum(rho, 6) + " ≥ 1: " + nombre + " <em>no</em> converge para este sistema con esta matriz de iteración, sin importar el punto de partida. Prueba con el otro método, o reordena/reescala las ecuaciones.") +
+        "</div>" +
+      "</div></div>";
+  } catch(e){
+    CVE.err().textContent = e.message;
+    CVE.out().innerHTML = "";
+  }
+}
+document.getElementById("cvRun").addEventListener("click", cvRun);
+document.getElementById("cvCode").innerHTML = hl(CV_PY_CODE);
 
 /* ---- tema ---- */
 const root = document.documentElement;
