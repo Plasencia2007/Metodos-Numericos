@@ -130,40 +130,57 @@ body{
 .m{ font-family: var(--mono); font-size: .94em; color: var(--ink); }
 
 /* ============================================================
-   SHELL
+   SHELL — rail lateral + escenario
    ============================================================ */
-.topbar{
-  position: sticky; top: 0; z-index: 5;
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px;
-  padding: 16px 28px;
-  background: var(--panel-sunk);
-  border-bottom: 1px solid var(--rule);
+.shell{ display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+.view, .view > *{ min-width: 0; }
+
+.rail{
+  position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+  background: var(--panel-sunk); border-right: 1px solid var(--rule);
+  padding: 24px 0 28px; display: flex; flex-direction: column; gap: 24px;
 }
-.brand{ display: flex; align-items: baseline; gap: 12px; }
-.brand-mark{ display: inline-block; width: 18px; border-top: 2px solid var(--accent); }
-.brand h1{ margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.02em; }
+.brand{ padding: 0 20px; }
+.brand h1{ margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.brand-mark{ display: inline-block; width: 18px; border-top: 2px solid var(--accent); margin-bottom: 9px; }
 .brand-sub{
-  font-family: var(--mono); font-size: 10px; font-weight: 500;
+  margin-top: 4px; font-family: var(--mono); font-size: 10px; font-weight: 500;
   letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
 }
-.btn.ghost.theme{
-  font-family: var(--mono); font-size: 11.5px; padding: 7px 14px;
+.navgroup{ display: flex; flex-direction: column; gap: 2px; }
+.navgroup > h2{
+  margin: 0 0 6px; padding: 0 20px; font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-4);
 }
+.navlink{
+  display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 9px;
+  width: 100%; padding: 8px 20px 8px 16px; border: 0; border-left: 3px solid transparent;
+  background: transparent; color: var(--ink-3); font-family: var(--sans); font-size: 13px; font-weight: 500;
+  text-align: left; cursor: pointer; transition: color .14s, background-color .14s, border-color .14s;
+}
+.navlink .glyph{ font-family: var(--mono); font-size: 11px; text-align: center; color: var(--ink-4); transition: color .14s; }
+.navlink:hover{ color: var(--ink); background: var(--panel-alt); }
+.navlink:hover .glyph{ color: var(--ink-2); }
+.navlink[aria-current="page"]{ color: var(--ink); font-weight: 600; background: var(--panel); border-left-color: var(--accent); }
+.navlink[aria-current="page"] .glyph{ color: var(--accent); }
+.railfoot{ margin-top: auto; padding: 0 20px; font-family: var(--mono); font-size: 9.5px; line-height: 1.7; color: var(--ink-4); }
 
-.stage{
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 36px 24px 96px;
+.stage{ min-width: 0; max-width: 980px; padding: 36px 28px 96px; }
+.view{ display: none; }
+.view.is-active{ display: block; }
+
+@media (max-width: 820px){
+  .shell{ grid-template-columns: minmax(0,1fr); }
+  .rail{ position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding-bottom: 18px; }
+  .stage{ padding: 26px 18px 72px; }
 }
-@media (min-width: 900px){ .stage{ max-width: 980px; } }
 
 .eyebrow{
   font-family: var(--mono); font-size: 10px; font-weight: 600;
   letter-spacing: .17em; text-transform: uppercase; color: var(--ink-3);
   margin: 0 0 10px;
 }
-.stage > header h2{
+.view > header h2{
   margin: 0; font-size: clamp(26px, 3.4vw, 36px); font-weight: 700;
   letter-spacing: -.03em; line-height: 1.08; text-wrap: balance;
 }
@@ -339,58 +356,138 @@ pre.py .nu{ color: #B0840F; }
 </head>
 <body>
 
-<div class="topbar">
-  <div class="brand">
-    <span class="brand-mark" aria-hidden="true"></span>
-    <div>
-      <h1>Factorización LU</h1>
-      <div class="brand-sub">Métodos Numéricos · Sesión 6</div>
+<div class="shell">
+  <nav class="rail" aria-label="Secciones">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <h1>Sistemas de Ecuaciones</h1>
+      <div class="brand-sub">Métodos Numéricos</div>
     </div>
-  </div>
-  <button class="btn ghost theme" id="themeBtn" type="button">Claro / oscuro</button>
-</div>
 
-<main class="stage">
-  <header>
-    <p class="eyebrow">Sesión 6 · Sistemas de ecuaciones lineales</p>
-    <h2>Descomposición LU (Doolittle)</h2>
-  </header>
-  <p class="lede">Descompón A = LU <em>una sola vez</em> y resuelve el sistema con dos sustituciones rápidas de costo O(n²). Funciona para cualquier tamaño n: cuando cambie el vector de términos independientes, reutiliza L y U sin volver a triangular.</p>
+    <div class="navgroup">
+      <h2>Métodos directos</h2>
+      <button class="navlink" data-view="lu" aria-current="page"><span class="glyph" aria-hidden="true">⑥</span>Factorización LU</button>
+    </div>
 
-  <div class="panel">
-    <div class="panel-head"><h3 class="sec">Sistema Ax = b</h3></div>
-    <div class="panel-body">
-      <div class="controls">
-        <div class="field"><label for="luN">Número de incógnitas (n)</label><input id="luN" type="text" inputmode="numeric" value="3"></div>
-        <div class="field"><label for="luPreset">Ejemplos</label><select id="luPreset"></select></div>
-        <div class="field"><button class="btn ghost sm" id="luResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+    <div class="navgroup">
+      <h2>Métodos iterativos</h2>
+      <button class="navlink" data-view="jacobi"><span class="glyph" aria-hidden="true">⑦</span>Jacobi</button>
+    </div>
+
+    <div class="navgroup">
+      <h2>Vista</h2>
+      <button class="navlink" id="themeBtn" type="button"><span class="glyph" aria-hidden="true">◐</span><span id="themeLbl">Claro / oscuro</span></button>
+    </div>
+
+    <div class="railfoot">UPeU · Ing. de Sistemas<br>Docente: Jorge L. Manrique<br>Tablas recalculadas en vivo</div>
+  </nav>
+
+  <main class="stage">
+
+    <!-- ===================== LU (DOOLITTLE) ===================== -->
+    <section class="view is-active" id="view-lu">
+      <header>
+        <p class="eyebrow">Sesión 6 · Sistemas de ecuaciones lineales</p>
+        <h2>Descomposición LU (Doolittle)</h2>
+      </header>
+      <p class="lede">Descompón A = LU <em>una sola vez</em> y resuelve el sistema con dos sustituciones rápidas de costo O(n²). Funciona para cualquier tamaño n: cuando cambie el vector de términos independientes, reutiliza L y U sin volver a triangular.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">Sistema Ax = b</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="luN">Número de incógnitas (n)</label><input id="luN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="luPreset">Ejemplos</label><select id="luPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="luResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <p class="tcap" style="margin:10px 0 0">La columna resaltada a la derecha es <span class="m">b</span> — el vector de términos independientes. El resto es la matriz de coeficientes <span class="m">A</span>.</p>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="luGrid"></table></div>
+          <div class="rowend"><button class="btn" id="luRun" type="button">Descomponer y resolver</button></div>
+          <div class="errbox" id="luErr"></div>
+        </div>
       </div>
-      <p class="tcap" style="margin:10px 0 0">La columna resaltada a la derecha es <span class="m">b</span> — el vector de términos independientes. El resto es la matriz de coeficientes <span class="m">A</span>.</p>
-      <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="luGrid"></table></div>
-      <div class="rowend"><button class="btn" id="luRun" type="button">Descomponer y resolver</button></div>
-      <div class="errbox" id="luErr"></div>
-    </div>
-  </div>
 
-  <ol class="stepper" id="luSteps"></ol>
+      <ol class="stepper" id="luSteps"></ol>
 
-  <div class="reuse-panel" id="luReuse" hidden>
-    <span class="locked-badge">L y U ya calculadas</span>
-    <h4>Fase 2 — nuevo vector de términos independientes</h4>
-    <p class="sub">Cambia solo <span class="m">b</span> y resuelve con las mismas L y U de arriba: dos sustituciones de costo O(n²), sin triangular otra vez.</p>
-    <div class="bvec-row" id="luReuseInputs"></div>
-    <div class="rowend"><button class="btn" id="luReuseRun" type="button">Resolver con L y U actuales</button></div>
-    <div class="errbox" id="luReuseErr"></div>
-    <div id="luReuseOut"></div>
-  </div>
+      <div class="reuse-panel" id="luReuse" hidden>
+        <span class="locked-badge">L y U ya calculadas</span>
+        <h4>Fase 2 — nuevo vector de términos independientes</h4>
+        <p class="sub">Cambia solo <span class="m">b</span> y resuelve con las mismas L y U de arriba: dos sustituciones de costo O(n²), sin triangular otra vez.</p>
+        <div class="bvec-row" id="luReuseInputs"></div>
+        <div class="rowend"><button class="btn" id="luReuseRun" type="button">Resolver con L y U actuales</button></div>
+        <div class="errbox" id="luReuseErr"></div>
+        <div id="luReuseOut"></div>
+      </div>
 
-  <details class="code" style="margin-top:22px">
-    <summary>Código en Python — factorización LU (Doolittle)</summary>
-    <pre class="py"><code id="luCode"></code></pre>
-  </details>
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — factorización LU (Doolittle)</summary>
+        <pre class="py"><code id="luCode"></code></pre>
+      </details>
+    </section>
 
-  <p class="foot">UPeU · Ing. de Sistemas — Docente: Jorge L. Manrique · Tablas recalculadas en vivo</p>
-</main>
+    <!-- ===================== JACOBI ===================== -->
+    <section class="view" id="view-jacobi">
+      <header>
+        <p class="eyebrow">Sesión 7 · Métodos iterativos</p>
+        <h2>Método de Jacobi</h2>
+      </header>
+      <p class="lede">Aísla cada incógnita en su propia ecuación y las actualiza <em>todas a la vez</em>, usando siempre el vector completo de la iteración anterior — nunca un valor recién calculado dentro de la misma vuelta. Por eso también se le llama método de los desplazamientos simultáneos.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Sistema Ax = b</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="jaN">Número de incógnitas (n)</label><input id="jaN" type="text" inputmode="numeric" value="2"></div>
+            <div class="field"><label for="jaPreset">Ejemplos de la guía</label><select id="jaPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="jaResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="jaGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Despejar cada incógnita</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Cada ecuación se reescribe dejando una sola incógnita a la izquierda:</p>
+          <div class="formula" id="jaFormulas" style="text-align:left;line-height:1.9"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">3 · Convergencia — dominancia diagonal</h3></div>
+        <div class="panel-body">
+          <p class="prose" style="margin:0 0 10px">Condición <em>suficiente</em> (no necesaria) para garantizar convergencia: en cada fila, el elemento diagonal debe superar en valor absoluto a la suma de los demás.</p>
+          <div id="jaDomTable"></div>
+          <div class="note" id="jaDomNote"></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">4 · Iterar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field" style="grid-column:1/-1"><label>Aproximación inicial x⁽⁰⁾</label>
+              <div class="bvec-row" id="jaX0"></div>
+            </div>
+            <div class="field"><label for="jaTol">Tolerancia ε (%)</label><input id="jaTol" type="text" inputmode="decimal" value="0.01"></div>
+            <div class="field"><label for="jaIter">Máx. iteraciones</label><input id="jaIter" type="text" inputmode="numeric" value="50"></div>
+            <div class="field"><label for="jaDec">Decimales</label><input id="jaDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <div class="rowend"><button class="btn" id="jaRun" type="button">Iterar Jacobi</button></div>
+          <div class="errbox" id="jaErr"></div>
+        </div>
+      </div>
+
+      <div id="jaOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — método de Jacobi</summary>
+        <pre class="py"><code id="jaCode"></code></pre>
+      </details>
+    </section>
+
+  </main>
+</div>
 
 <script>
 "use strict";
@@ -818,9 +915,270 @@ document.addEventListener("click", ev => {
   if (paso) paso.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
+/* ============================================================
+   NAVEGACIÓN entre vistas
+   ============================================================ */
+const navLinks = Array.prototype.slice.call(document.querySelectorAll(".navlink[data-view]"));
+navLinks.forEach(btn => btn.addEventListener("click", () => {
+  navLinks.forEach(b => b.removeAttribute("aria-current"));
+  btn.setAttribute("aria-current", "page");
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("is-active"));
+  document.getElementById("view-" + btn.dataset.view).classList.add("is-active");
+  window.scrollTo(0, 0);
+}));
+
+/* ============================================================
+   JACOBI — método iterativo de desplazamientos simultáneos
+   ============================================================ */
+const JA_EJEMPLOS = [
+  { t: "Ejemplo de la guía (2×2) — Et = 0.2 %", n: 2, A: [[2, -1], [1, 2]], b: [1, 3], tol: 0.2 },
+  { t: "Ejercicio de la guía (3×3) — ε = 0.01 %", n: 3, A: [[5, -2, 3], [-3, 9, 1], [2, -1, -7]], b: [-1, 2, 3], tol: 0.01 }
+];
+
+const JAE = {
+  n: () => document.getElementById("jaN"),
+  grid: () => document.getElementById("jaGrid"),
+  x0: () => document.getElementById("jaX0"),
+  err: () => document.getElementById("jaErr"),
+  out: () => document.getElementById("jaOut")
+};
+
+function jaBuildGrid(n){
+  n = Math.max(2, Math.min(10, Math.round(n)));
+  JAE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>x<sub>" + (j + 1) + "</sub></th>";
+  head += '<th class="bhead">b</th></tr>';
+  let body = "";
+  for (let i = 0; i < n; i++){
+    body += "<tr><td class=\"mrowlbl\">Ec. " + (i + 1) + "</td>";
+    for (let j = 0; j < n; j++) body += '<td><input id="ja-a-' + i + "-" + j + '" type="text" inputmode="decimal" autocomplete="off" value="' + (i === j ? 1 : 0) + '"></td>';
+    body += '<td class="bcell"><input id="ja-b-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="0"></td></tr>';
+  }
+  JAE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + body + "</tbody>";
+  jaBuildX0(n);
+  jaRenderFormulas();
+  jaRenderDominance();
+}
+function jaBuildX0(n){
+  JAE.x0().innerHTML = Array.from({ length: n }, (_, i) =>
+    '<input id="ja-x0-' + i + '" type="text" inputmode="decimal" autocomplete="off" value="0" aria-label="x0 sub ' + (i + 1) + '">').join("");
+}
+function jaFillValues(n, A, b){
+  for (let i = 0; i < n; i++){
+    for (let j = 0; j < n; j++){ const el = document.getElementById("ja-a-" + i + "-" + j); if (el) el.value = A[i][j]; }
+    const be = document.getElementById("ja-b-" + i); if (be) be.value = b[i];
+  }
+}
+function jaReadMatrix(){
+  const n = Math.max(2, Math.min(10, Math.round(Number(JAE.n().value) || 2)));
+  const A = [], b = [];
+  for (let i = 0; i < n; i++){
+    const row = [];
+    for (let j = 0; j < n; j++){
+      const el = document.getElementById("ja-a-" + i + "-" + j);
+      const v = Number(String(el ? el.value : "").trim().replace(",", "."));
+      if (!isFinite(v)) throw new Error("El coeficiente a" + (i + 1) + (j + 1) + " no es un número válido");
+      row.push(v);
+    }
+    A.push(row);
+    const be = document.getElementById("ja-b-" + i);
+    const vb = Number(String(be ? be.value : "").trim().replace(",", "."));
+    if (!isFinite(vb)) throw new Error("El término independiente b" + (i + 1) + " no es un número válido");
+    b.push(vb);
+  }
+  return { n, A, b };
+}
+function jaReadX0(n){
+  const x0 = [];
+  for (let i = 0; i < n; i++){
+    const el = document.getElementById("ja-x0-" + i);
+    const v = Number(String(el ? el.value : "0").trim().replace(",", "."));
+    if (!isFinite(v)) throw new Error("x₀ sub " + (i + 1) + " no es un número válido");
+    x0.push(v);
+  }
+  return x0;
+}
+
+(function(){
+  const sel = document.getElementById("jaPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' +
+    JA_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = JA_EJEMPLOS[Number(sel.value)];
+    jaBuildGrid(e.n);
+    jaFillValues(e.n, e.A, e.b);
+    document.getElementById("jaTol").value = e.tol;
+    jaRenderFormulas();
+    jaRenderDominance();
+  });
+  document.getElementById("jaResize").addEventListener("click", () => jaBuildGrid(Number(JAE.n().value) || 2));
+  document.getElementById("jaGrid").addEventListener("input", () => { jaRenderFormulas(); jaRenderDominance(); });
+  jaBuildGrid(2);
+  jaFillValues(2, JA_EJEMPLOS[0].A, JA_EJEMPLOS[0].b);
+  jaRenderFormulas();
+  jaRenderDominance();
+})();
+
+/* fórmulas despejadas: x_i = (b_i − Σ a_ij x_j) / a_ii, mostrando los coeficientes reales */
+function jaRenderFormulas(){
+  let A, b, n;
+  try{ ({ n, A, b } = jaReadMatrix()); } catch(e){ document.getElementById("jaFormulas").innerHTML = "<span style='color:var(--ink-4)'>—</span>"; return; }
+  const lines = [];
+  for (let i = 0; i < n; i++){
+    let terms = "";
+    for (let j = 0; j < n; j++){
+      if (j === i || A[i][j] === 0) continue;
+      const sign = A[i][j] > 0 ? " − " : " + ";
+      terms += sign + trimNum(Math.abs(A[i][j]), 6) + "x<sub>" + (j + 1) + "</sub>";
+    }
+    lines.push("x<sub>" + (i + 1) + "</sub> = ( " + trimNum(b[i], 6) + terms + " ) / " + trimNum(A[i][i], 6));
+  }
+  document.getElementById("jaFormulas").innerHTML = lines.join("<br>");
+}
+
+/* dominancia diagonal: condición suficiente, no necesaria */
+function jaRenderDominance(){
+  let A, n;
+  try{ ({ n, A } = jaReadMatrix()); } catch(e){ document.getElementById("jaDomTable").innerHTML = ""; document.getElementById("jaDomNote").innerHTML = ""; return; }
+  let head = '<tr><th class="l">Fila</th><th>|a<sub>ii</sub>|</th><th>Σ|a<sub>ij</sub>|, j≠i</th><th class="l">¿Domina?</th></tr>', body = "";
+  let allOk = true;
+  for (let i = 0; i < n; i++){
+    const diag = Math.abs(A[i][i]);
+    let s = 0; for (let j = 0; j < n; j++) if (j !== i) s += Math.abs(A[i][j]);
+    const ok = diag > s;
+    if (!ok) allOk = false;
+    body += "<tr><td class=\"l\">Ec. " + (i + 1) + "</td><td>" + trimNum(diag, 4) + "</td><td>" + trimNum(s, 4) + "</td><td class=\"l\">" +
+      (ok ? '<span style="color:var(--verde)">Sí</span>' : '<span style="color:var(--warn)">No</span>') + "</td></tr>";
+  }
+  document.getElementById("jaDomTable").innerHTML = '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+  document.getElementById("jaDomNote").innerHTML = allOk
+    ? "<b>Convergencia garantizada</b>La matriz es estrictamente diagonal dominante en todas las filas: Jacobi converge sí o sí, sin importar el punto de partida."
+    : "<b>Dominancia no garantizada</b>Al menos una fila no domina. Esto <em>no</em> significa que Jacobi vaya a diverger — la dominancia diagonal es una condición suficiente, no necesaria. Puede converger igual; solo que aquí no hay garantía previa. Itera y observa si el error baja.";
+  document.getElementById("jaDomNote").className = "note " + (allOk ? "ok" : "warn");
+}
+
+/* iteración de Jacobi: todas las x_i de la nueva iteración usan SOLO el vector anterior */
+function jacobiRun(A, b, x0, tolPct, maxIter){
+  const n = A.length;
+  const rows = [{ k: 0, x: x0.slice(), err: null, sol: false }];
+  let x = x0.slice();
+  for (let k = 1; k <= maxIter; k++){
+    const xn = new Array(n);
+    for (let i = 0; i < n; i++){
+      let s = 0;
+      for (let j = 0; j < n; j++) if (j !== i) s += A[i][j] * x[j];
+      xn[i] = (b[i] - s) / A[i][i];
+    }
+    let err = 0;
+    for (let i = 0; i < n; i++){
+      const e = xn[i] !== 0 ? Math.abs((xn[i] - x[i]) / xn[i]) * 100 : Math.abs(xn[i] - x[i]) * 100;
+      if (e > err) err = e;
+    }
+    const sol = err < tolPct;
+    rows.push({ k, x: xn, err, sol });
+    x = xn;
+    if (sol) break;
+  }
+  const last = rows[rows.length - 1];
+  return { rows, x: last.x, iters: last.k, err: last.err, converged: last.sol };
+}
+
+const JA_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR -- aqui va TODO lo que cambia
+# ==========================================================
+A = [
+    [2, -1],
+    [1,  2],
+]
+B  = [1, 3]
+X0 = [0, 0]        # <-- aproximacion inicial
+TOL = 0.2          # <-- tolerancia en %
+ITER = 50          # <-- maximo de iteraciones
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def jacobi(A, b, x0, tol=0.5, max_iter=50):
+    n = len(A)
+    x = x0[:]
+    print(f"{'k':<3}" + "".join(f"x{i+1:<12}" for i in range(n)) + "Error(%)")
+    print("0  " + "".join(f"{v:<13.6f}" for v in x) + "-")
+    for k in range(1, max_iter + 1):
+        x_new = [0.0] * n
+        for i in range(n):
+            # todos los terminos usan SOLO el vector "x" de la iteracion anterior
+            s = sum(A[i][j] * x[j] for j in range(n) if j != i)
+            x_new[i] = (b[i] - s) / A[i][i]
+
+        err = max(
+            abs((x_new[i] - x[i]) / x_new[i]) if x_new[i] != 0 else abs(x_new[i] - x[i])
+            for i in range(n)
+        ) * 100
+
+        print(f"{k:<3}" + "".join(f"{v:<13.6f}" for v in x_new) + f"{err:.6f}")
+        x = x_new
+        if err < tol:
+            return x, k, err
+    return x, max_iter, err
+
+raiz, n_iter, error = jacobi(A, B, X0, tol=TOL, max_iter=ITER)
+print(f"\\nSolucion: x = {raiz}   ({n_iter} iteraciones, error {error:.6f}%)")`;
+
+function jaRun(){
+  JAE.err().textContent = "";
+  try{
+    const { n, A, b } = jaReadMatrix();
+    for (let i = 0; i < n; i++){
+      if (Math.abs(A[i][i]) < 1e-12) throw new Error("a" + (i + 1) + (i + 1) + " (la diagonal de la ecuación " + (i + 1) +
+        ") es cero: Jacobi despeja x" + (i + 1) + " dividiendo entre ese elemento. Reordena las filas para que ningún término diagonal sea cero.");
+    }
+    const x0 = jaReadX0(n);
+    const tol = Number(String(document.getElementById("jaTol").value).replace(",", "."));
+    if (!isFinite(tol) || tol <= 0) throw new Error("La tolerancia debe ser un número mayor que cero");
+    const maxIter = Math.max(1, Math.min(500, Math.round(Number(document.getElementById("jaIter").value) || 50)));
+    const dec = Math.max(0, Math.min(12, Math.round(Number(document.getElementById("jaDec").value) || 6)));
+
+    const R = jacobiRun(A, b, x0, tol, maxIter);
+
+    let head = '<tr><th>k</th>' + Array.from({ length: n }, (_, i) => "<th>x<sub>" + (i + 1) + "</sub></th>").join("") + "<th>Error (%)</th><th>¿Solución?</th></tr>";
+    let body = "";
+    R.rows.forEach((r, idx) => {
+      body += '<tr class="' + (r.sol ? "hit" : "") + '"><td>' + r.k + "</td>" +
+        r.x.map(v => "<td>" + trimNum(v, dec) + "</td>").join("") +
+        "<td>" + (r.err === null ? "—" : trimNum(r.err, 6)) + "</td>" +
+        "<td>" + (r.err === null ? "—" : (r.sol ? '<span style="color:var(--verde)">Sí</span>' : "No")) + "</td></tr>";
+    });
+
+    const resid = A.map((row, i) => Math.abs(row.reduce((s, a, j) => s + a * R.x[j], 0) - b[i]));
+    const maxResid = Math.max.apply(null, resid);
+
+    document.getElementById("jaOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Tabla de iteraciones</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>" +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">' + (R.converged ? "Solución del sistema" : "Última estimación — sin converger") + "</div>" +
+          '<div class="answer-val" style="font-size:19px">' + R.x.map((v, i) => "x<sub>" + (i + 1) + "</sub>=" + trimNum(v, dec)).join(",&nbsp; ") + "</div></div>" +
+          '<dl class="answer-facts">' +
+            "<div><dt>Iteraciones</dt><dd>" + R.iters + "</dd></div>" +
+            "<div><dt>Error final</dt><dd>" + trimNum(R.err, 6) + " %</dd></div>" +
+            "<div><dt>Criterio</dt><dd>ε &lt; " + tol + " %</dd></div>" +
+            "<div><dt>Máx. |Ax−b|</dt><dd>" + maxResid.toExponential(2) + "</dd></div>" +
+          "</dl></div>" +
+        (R.converged ? "" : '<div class="note warn" style="margin-top:14px"><b>No alcanzó la tolerancia</b>Se agotaron las ' + maxIter + ' iteraciones. Revisa la dominancia diagonal, prueba con más iteraciones, o cambia el punto de partida.</div>') +
+      "</div></div>";
+  } catch(e){
+    JAE.err().textContent = e.message;
+    JAE.out().innerHTML = "";
+  }
+}
+document.getElementById("jaRun").addEventListener("click", jaRun);
+document.getElementById("jaCode").innerHTML = hl(JA_PY_CODE);
+
 /* ---- tema ---- */
 const root = document.documentElement;
-const themeLbl = document.getElementById("themeBtn");
+const themeLbl = document.getElementById("themeLbl");
 function currentDark(){
   const st = root.getAttribute("data-theme");
   if (st) return st === "dark";
