@@ -352,6 +352,18 @@ pre.py .cm{ color: var(--ink-4); font-style: italic; }
 pre.py .nu{ color: #B0840F; }
 
 .foot{ margin-top: 40px; font-family: var(--mono); font-size: 11px; color: var(--ink-4); line-height: 1.7; }
+
+/* ============================================================
+   INTERPOLACIÓN — pasos de sustitución y gráfica
+   ============================================================ */
+.steplist{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.steplist li{ padding: 10px 13px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--ink-2); overflow-x: auto; }
+.steplist li b{ color: var(--ink); }
+.plotwrap{ overflow-x: auto; max-width: 100%; display: flex; justify-content: center; padding: 6px 0; }
+.plotlegend{ display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 11.5px; color: var(--ink-3); }
+.plotlegend span{ display: inline-flex; align-items: center; gap: 6px; }
+.plotlegend i{ width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 </style>
 </head>
 <body>
@@ -379,6 +391,13 @@ pre.py .nu{ color: #B0840F; }
     <div class="navgroup">
       <h2>Teoría</h2>
       <button class="navlink" data-view="cv"><span class="glyph" aria-hidden="true">⑩</span>Convergencia (ρ(T))</button>
+    </div>
+
+    <div class="navgroup">
+      <h2>Interpolación</h2>
+      <button class="navlink" data-view="lineal"><span class="glyph" aria-hidden="true">⑪</span>Interpolación lineal</button>
+      <button class="navlink" data-view="vander"><span class="glyph" aria-hidden="true">⑫</span>Polinómica (Vandermonde)</button>
+      <button class="navlink" data-view="lagrange"><span class="glyph" aria-hidden="true">⑬</span>Lagrange</button>
     </div>
 
     <div class="navgroup">
@@ -697,6 +716,135 @@ pre.py .nu{ color: #B0840F; }
       <details class="code" style="margin-top:22px">
         <summary>Código en Python — radio espectral por el método de la potencia</summary>
         <pre class="py"><code id="cvCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== INTERPOLACIÓN LINEAL ===================== -->
+    <section class="view" id="view-lineal">
+      <header>
+        <p class="eyebrow">Sesión 8 · Interpolación</p>
+        <h2>Interpolación lineal</h2>
+      </header>
+      <p class="lede">La forma más simple de interpolación: unir dos puntos vecinos con una línea recta. Cuanto más corto el intervalo entre esos dos puntos, mejor la aproximación — porque una función continua se parece más a una recta en tramos cortos.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Tabla de datos (x, y)</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="lnN">N.º de puntos (n+1)</label><input id="lnN" type="text" inputmode="numeric" value="5"></div>
+            <div class="field"><label for="lnPreset">Ejemplos de la guía</label><select id="lnPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="lnResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="lnGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Elegir el par de puntos e interpolar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="lnPair">Par vecino (x₀, x₁)</label><select id="lnPair"></select></div>
+            <div class="field"><label for="lnEval">Valor de x a evaluar</label><input id="lnEval" type="text" inputmode="decimal" value="90"></div>
+          </div>
+          <p class="tcap">f₁(x) = f(x₀) + <span class="m">(f(x₁) − f(x₀)) / (x₁ − x₀)</span> · (x − x₀)</p>
+          <div class="rowend"><button class="btn" id="lnRun" type="button">Interpolar</button></div>
+          <div class="errbox" id="lnErr"></div>
+        </div>
+      </div>
+
+      <div id="lnOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — interpolación lineal</summary>
+        <pre class="py"><code id="lnCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== POLINÓMICA (VANDERMONDE) ===================== -->
+    <section class="view" id="view-vander">
+      <header>
+        <p class="eyebrow">Sesión 8 · Interpolación</p>
+        <h2>Interpolación polinómica — sistema de Vandermonde</h2>
+      </header>
+      <p class="lede">Dados n+1 puntos, existe un único polinomio P<sub>n</sub>(x) = a₀ + a₁x + ⋯ + aₙxⁿ de grado ≤ n que pasa por todos ellos. Sus coeficientes se obtienen resolviendo el sistema lineal P<sub>n</sub>(x<sub>i</sub>) = y<sub>i</sub>, cuya matriz de coeficientes es la <b>matriz de Vandermonde</b>: si los x<sub>i</sub> son distintos, det V ≠ 0 y la solución es única.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Tabla de datos (x, y)</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="vdN">N.º de puntos (n+1)</label><input id="vdN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="vdPreset">Ejemplos de la guía</label><select id="vdPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="vdResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="vdGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Sistema de Vandermonde V·a = y</h3></div>
+        <div class="panel-body">
+          <div id="vdMatrix"></div>
+          <p class="tcap" style="margin-top:10px">Cada fila i es [1, x<sub>i</sub>, x<sub>i</sub>², …, x<sub>i</sub>ⁿ] — los coeficientes a₀…aₙ son las incógnitas.</p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">3 · Resolver y evaluar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="vdEval">Valor de x a evaluar</label><input id="vdEval" type="text" inputmode="decimal" value="90"></div>
+            <div class="field"><label for="vdDec">Decimales</label><input id="vdDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <div class="rowend"><button class="btn" id="vdRun" type="button">Resolver sistema</button></div>
+          <div class="errbox" id="vdErr"></div>
+        </div>
+      </div>
+
+      <div id="vdOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — Vandermonde (Gauss con pivoteo)</summary>
+        <pre class="py"><code id="vdCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== LAGRANGE ===================== -->
+    <section class="view" id="view-lagrange">
+      <header>
+        <p class="eyebrow">Sesión 8 · Interpolación</p>
+        <h2>Polinomio de interpolación de Lagrange</h2>
+      </header>
+      <p class="lede">Construye P<sub>n</sub>(x) = Σ y<sub>k</sub>·L<sub>k</sub>(x) directamente, sin resolver ningún sistema lineal: cada L<sub>k</sub>(x) es un polinomio base que vale 1 en x<sub>k</sub> y 0 en los demás nodos. Motor de cálculo con bucles anidados O(n²), tal como pide la guía de aprendizaje autónomo.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Nodos (x<sub>i</sub>, y<sub>i</sub>)</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="lgN">N.º de nodos (n+1)</label><input id="lgN" type="text" inputmode="numeric" value="4"></div>
+            <div class="field"><label for="lgPreset">Ejemplos</label><select id="lgPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="lgResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="lgGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Punto a evaluar e interpolar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="lgEval">x<sub>eval</sub></label><input id="lgEval" type="text" inputmode="decimal" value="6"></div>
+            <div class="field"><label for="lgDec">Decimales</label><input id="lgDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <div class="rowend"><button class="btn" id="lgRun" type="button">Interpolar (Lagrange)</button></div>
+          <div class="errbox" id="lgErr"></div>
+        </div>
+      </div>
+
+      <div id="lgOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — Lagrange (bucles anidados O(n²))</summary>
+        <pre class="py"><code id="lgCode"></code></pre>
       </details>
     </section>
 
@@ -2189,6 +2337,540 @@ function cvRun(){
 }
 document.getElementById("cvRun").addEventListener("click", cvRun);
 document.getElementById("cvCode").innerHTML = hl(CV_PY_CODE);
+
+/* ============================================================
+   ÁLGEBRA POLINOMIAL GENÉRICA (coeficientes ascendentes a0..an) — Interpolación
+   ============================================================ */
+function polyMulLinear(poly, r){
+  const out = new Array(poly.length + 1).fill(0);
+  for (let i = 0; i < poly.length; i++){
+    out[i]     += poly[i] * (-r);
+    out[i + 1] += poly[i];
+  }
+  return out;
+}
+function polyEval(coeffs, x){
+  let s = 0;
+  for (let i = coeffs.length - 1; i >= 0; i--) s = s * x + coeffs[i];
+  return s;
+}
+function polyToStr(coeffs, dec){
+  const n = coeffs.length - 1;
+  let parts = [];
+  for (let i = n; i >= 0; i--){
+    const c = coeffs[i];
+    if (Math.abs(c) < 1e-10 && !(i === 0 && parts.length === 0)) continue;
+    const isUnit = Math.abs(Math.abs(c) - 1) < 1e-9 && i !== 0;
+    const av = isUnit ? "" : trimNum(Math.abs(c), dec);
+    const sign = c < 0 ? (parts.length ? " − " : "−") : (parts.length ? " + " : "");
+    const vp = i === 0 ? "" : (i === 1 ? "x" : "x<sup>" + i + "</sup>");
+    parts.push(sign + av + vp);
+  }
+  return parts.length ? parts.join("") : "0";
+}
+/* coeficientes (a0..an) del k-ésimo polinomio base de Lagrange, y su forma factorizada */
+function lagrangeBasis(xs, k){
+  const n = xs.length;
+  let poly = [1], denom = 1;
+  let factors = [];
+  for (let i = 0; i < n; i++){
+    if (i === k) continue;
+    poly = polyMulLinear(poly, xs[i]);
+    denom *= (xs[k] - xs[i]);
+    factors.push("(x " + (xs[i] >= 0 ? "− " + trimNum(xs[i], 4) : "+ " + trimNum(-xs[i], 4)) + ")");
+  }
+  const coeffs = poly.map(c => c / denom);
+  return { coeffs, denom, factored: factors.join("") + " / " + trimNum(denom, 6) };
+}
+function lagrangeCoeffs(xs, ys){
+  const n = xs.length;
+  let total = new Array(n).fill(0);
+  for (let k = 0; k < n; k++){
+    const { coeffs } = lagrangeBasis(xs, k);
+    for (let i = 0; i < coeffs.length; i++) total[i] += ys[k] * coeffs[i];
+  }
+  return total;
+}
+function gaussSolve(A, b){
+  const n = A.length;
+  const M = A.map((row, i) => row.slice().concat([b[i]]));
+  for (let col = 0; col < n; col++){
+    let piv = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+    if (Math.abs(M[piv][col]) < 1e-12) throw new Error("Sistema singular: revisa que los x_i sean todos distintos");
+    if (piv !== col){ const tmp = M[piv]; M[piv] = M[col]; M[col] = tmp; }
+    for (let r = col + 1; r < n; r++){
+      const f = M[r][col] / M[col][col];
+      for (let c = col; c <= n; c++) M[r][c] -= f * M[col][c];
+    }
+  }
+  const x = new Array(n);
+  for (let i = n - 1; i >= 0; i--){
+    let s = M[i][n];
+    for (let j = i + 1; j < n; j++) s -= M[i][j] * x[j];
+    x[i] = s / M[i][i];
+  }
+  return x;
+}
+
+/* ============================================================
+   GRÁFICA SVG (puntos + curva + punto interpolado) — Interpolación
+   ============================================================ */
+function buildPlot(pts, coeffs, xmin, xmax, evalPt){
+  const W = 640, H = 340, ML = 50, MR = 18, MT = 18, MB = 34;
+  const plotW = W - ML - MR, plotH = H - MT - MB;
+  const N = 220;
+  const ys = [];
+  for (let i = 0; i <= N; i++) ys.push(polyEval(coeffs, xmin + (xmax - xmin) * i / N));
+  let yAll = ys.concat(pts.map(p => p.y));
+  if (evalPt) yAll = yAll.concat([evalPt.y]);
+  let ymin = Math.min.apply(null, yAll), ymax = Math.max.apply(null, yAll);
+  if (ymin === ymax){ ymin -= 1; ymax += 1; }
+  const pad = (ymax - ymin) * 0.1; ymin -= pad; ymax += pad;
+  const sx = x => ML + (x - xmin) / (xmax - xmin) * plotW;
+  const sy = y => MT + (1 - (y - ymin) / (ymax - ymin)) * plotH;
+
+  let path = "";
+  for (let i = 0; i <= N; i++){
+    const x = xmin + (xmax - xmin) * i / N;
+    path += (i === 0 ? "M" : "L") + sx(x).toFixed(2) + "," + sy(ys[i]).toFixed(2) + " ";
+  }
+
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:640px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">';
+  for (let i = 0; i <= 4; i++){
+    const yv = ymin + (ymax - ymin) * i / 4;
+    const yy = sy(yv);
+    svg += '<line x1="' + ML + '" y1="' + yy.toFixed(2) + '" x2="' + (ML + plotW) + '" y2="' + yy.toFixed(2) + '" style="stroke:var(--rule);stroke-width:1;stroke-dasharray:2,3"/>';
+    svg += '<text x="' + (ML - 8) + '" y="' + (yy + 3).toFixed(2) + '" font-size="10" text-anchor="end" style="fill:var(--ink-3)">' + trimNum(yv, 1) + '</text>';
+  }
+  svg += '<line x1="' + ML + '" y1="' + MT + '" x2="' + ML + '" y2="' + (MT + plotH) + '" style="stroke:var(--rule-strong);stroke-width:1"/>';
+  svg += '<line x1="' + ML + '" y1="' + (MT + plotH) + '" x2="' + (ML + plotW) + '" y2="' + (MT + plotH) + '" style="stroke:var(--rule-strong);stroke-width:1"/>';
+  svg += '<path d="' + path + '" fill="none" style="stroke:var(--accent);stroke-width:2.2"/>';
+  pts.forEach(p => {
+    svg += '<circle cx="' + sx(p.x).toFixed(2) + '" cy="' + sy(p.y).toFixed(2) + '" r="4.5" style="fill:var(--stop);stroke:var(--panel);stroke-width:1.5"/>';
+    svg += '<text x="' + sx(p.x).toFixed(2) + '" y="' + (MT + plotH + 16) + '" font-size="10" text-anchor="middle" style="fill:var(--ink-3)">' + trimNum(p.x, 3) + '</text>';
+  });
+  if (evalPt){
+    const exs = sx(evalPt.x), eys = sy(evalPt.y);
+    svg += '<line x1="' + exs.toFixed(2) + '" y1="' + (MT + plotH) + '" x2="' + exs.toFixed(2) + '" y2="' + eys.toFixed(2) + '" style="stroke:var(--verde);stroke-width:1.2;stroke-dasharray:3,3"/>';
+    svg += '<circle cx="' + exs.toFixed(2) + '" cy="' + eys.toFixed(2) + '" r="6.5" style="fill:var(--verde);stroke:var(--panel);stroke-width:2"/>';
+  }
+  svg += "</svg>";
+  return svg;
+}
+
+/* ============================================================
+   INTERPOLACIÓN LINEAL
+   ============================================================ */
+const LN_EJEMPLOS = [
+  { t: "Guía: velocidad vs. consumo (n+1=5) — evalúa x=90", n: 5, xs: [60, 80, 100, 120, 140], ys: [9.0, 10.0, 10.5, 9.5, 9.0], i0: 1, ev: 90 },
+  { t: "Guía: ln(2), rango amplio [1, 6]", n: 2, xs: [1, 6], ys: [0, 1.791759], i0: 0, ev: 2 },
+  { t: "Guía: ln(2), rango angosto [1, 4]", n: 2, xs: [1, 4], ys: [0, 1.386294], i0: 0, ev: 2 }
+];
+const LNE = {
+  n: () => document.getElementById("lnN"),
+  grid: () => document.getElementById("lnGrid"),
+  pair: () => document.getElementById("lnPair"),
+  err: () => document.getElementById("lnErr"),
+  out: () => document.getElementById("lnOut")
+};
+function lnBuildGrid(n){
+  n = Math.max(2, Math.min(10, Math.round(n)));
+  LNE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>P<sub>" + j + "</sub></th>";
+  head += "</tr>";
+  let rowX = "<tr><td class=\"mrowlbl\">x</td>", rowY = "<tr><td class=\"mrowlbl\">y</td>";
+  for (let j = 0; j < n; j++){
+    rowX += '<td><input id="ln-x-' + j + '" type="text" inputmode="decimal" value="' + j + '"></td>';
+    rowY += '<td><input id="ln-y-' + j + '" type="text" inputmode="decimal" value="0"></td>';
+  }
+  LNE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + rowX + "</tr>" + rowY + "</tr></tbody>";
+  lnBuildPairs(n);
+}
+function lnBuildPairs(n){
+  let opts = "";
+  for (let i = 0; i < n - 1; i++) opts += '<option value="' + i + '">P' + i + ' – P' + (i + 1) + "</option>";
+  LNE.pair().innerHTML = opts;
+}
+function lnFillValues(n, xs, ys){
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById("ln-x-" + j); if (ex) ex.value = xs[j];
+    const ey = document.getElementById("ln-y-" + j); if (ey) ey.value = ys[j];
+  }
+}
+function lnReadTable(){
+  const n = Math.max(2, Math.min(10, Math.round(Number(LNE.n().value) || 2)));
+  const xs = [], ys = [];
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById("ln-x-" + j), ey = document.getElementById("ln-y-" + j);
+    const vx = Number(String(ex ? ex.value : "").trim().replace(",", "."));
+    const vy = Number(String(ey ? ey.value : "").trim().replace(",", "."));
+    if (!isFinite(vx)) throw new Error("x" + j + " no es un número válido");
+    if (!isFinite(vy)) throw new Error("y" + j + " no es un número válido");
+    xs.push(vx); ys.push(vy);
+  }
+  return { n, xs, ys };
+}
+(function(){
+  const sel = document.getElementById("lnPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' + LN_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = LN_EJEMPLOS[Number(sel.value)];
+    lnBuildGrid(e.n);
+    lnFillValues(e.n, e.xs, e.ys);
+    LNE.pair().value = String(e.i0);
+    document.getElementById("lnEval").value = e.ev;
+  });
+  document.getElementById("lnResize").addEventListener("click", () => lnBuildGrid(Number(LNE.n().value) || 5));
+  document.getElementById("lnGrid").addEventListener("input", () => lnBuildPairs(Math.max(2, Math.min(10, Math.round(Number(LNE.n().value) || 2)))));
+  lnBuildGrid(5);
+  lnFillValues(5, LN_EJEMPLOS[0].xs, LN_EJEMPLOS[0].ys);
+  LNE.pair().value = String(LN_EJEMPLOS[0].i0);
+  document.getElementById("lnEval").value = LN_EJEMPLOS[0].ev;
+})();
+
+const LN_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+X0, Y0 = 80, 10.0
+X1, Y1 = 100, 10.5
+X_EVAL = 90
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def interpolacion_lineal(x0, y0, x1, y1, x):
+    return y0 + (y1 - y0) / (x1 - x0) * (x - x0)
+
+resultado = interpolacion_lineal(X0, Y0, X1, Y1, X_EVAL)
+print(f"f1({X_EVAL}) = {resultado:.6f}")`;
+
+function lnRun(){
+  LNE.err().textContent = "";
+  try{
+    const { xs, ys } = lnReadTable();
+    const i0 = Number(LNE.pair().value);
+    const x0 = xs[i0], x1 = xs[i0 + 1], y0 = ys[i0], y1 = ys[i0 + 1];
+    if (Math.abs(x1 - x0) < 1e-12) throw new Error("x0 y x1 no pueden ser iguales");
+    const xEval = Number(String(document.getElementById("lnEval").value).replace(",", "."));
+    if (!isFinite(xEval)) throw new Error("El valor de x a evaluar no es válido");
+    const m = (y1 - y0) / (x1 - x0);
+    const result = y0 + m * (xEval - x0);
+
+    document.getElementById("lnOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Sustitución numérica</h3></div><div class="panel-body">' +
+        '<ul class="steplist">' +
+          '<li>Pendiente: <b>m = (' + trimNum(y1, 6) + ' − ' + trimNum(y0, 6) + ') / (' + trimNum(x1, 6) + ' − ' + trimNum(x0, 6) + ') = ' + trimNum(m, 6) + '</b></li>' +
+          '<li>f₁(x) = ' + trimNum(y0, 6) + ' + ' + trimNum(m, 6) + ' · (x − ' + trimNum(x0, 6) + ')</li>' +
+          '<li>f₁(' + trimNum(xEval, 6) + ') = ' + trimNum(y0, 6) + ' + ' + trimNum(m, 6) + ' · (' + trimNum(xEval, 6) + ' − ' + trimNum(x0, 6) + ') = <b>' + trimNum(result, 6) + '</b></li>' +
+        '</ul>' +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">Valor interpolado</div>' +
+          '<div class="answer-val" style="font-size:20px">f₁(' + trimNum(xEval, 4) + ') = ' + trimNum(result, 6) + '</div></div>' +
+          '<dl class="answer-facts"><div><dt>x₀, x₁</dt><dd>' + trimNum(x0, 4) + ', ' + trimNum(x1, 4) + '</dd></div>' +
+            '<div><dt>y₀, y₁</dt><dd>' + trimNum(y0, 4) + ', ' + trimNum(y1, 4) + '</dd></div>' +
+            '<div><dt>Pendiente</dt><dd>' + trimNum(m, 6) + '</dd></div></dl></div>' +
+      '</div></div>';
+  } catch(e){
+    LNE.err().textContent = e.message;
+    LNE.out().innerHTML = "";
+  }
+}
+document.getElementById("lnRun").addEventListener("click", lnRun);
+document.getElementById("lnCode").innerHTML = hl(LN_PY_CODE);
+
+/* ============================================================
+   POLINÓMICA — VANDERMONDE
+   ============================================================ */
+const VD_EJEMPLOS = [
+  { t: "Guía: velocidad — opción 1 (80,100,120)", n: 3, xs: [80, 100, 120], ys: [10.0, 10.5, 9.5], ev: 90 },
+  { t: "Guía: velocidad — opción 2 (60,80,100)", n: 3, xs: [60, 80, 100], ys: [9.0, 10.0, 10.5], ev: 90 },
+  { t: "Guía: problema para la clase (-1,0,3)", n: 3, xs: [-1, 0, 3], ys: [15, 8, -1], ev: 1 }
+];
+const VDE = {
+  n: () => document.getElementById("vdN"),
+  grid: () => document.getElementById("vdGrid"),
+  err: () => document.getElementById("vdErr"),
+  out: () => document.getElementById("vdOut")
+};
+function vdBuildGrid(n){
+  n = Math.max(2, Math.min(6, Math.round(n)));
+  VDE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>P<sub>" + j + "</sub></th>";
+  head += "</tr>";
+  let rowX = "<tr><td class=\"mrowlbl\">x</td>", rowY = "<tr><td class=\"mrowlbl\">y</td>";
+  for (let j = 0; j < n; j++){
+    rowX += '<td><input id="vd-x-' + j + '" type="text" inputmode="decimal" value="' + j + '"></td>';
+    rowY += '<td><input id="vd-y-' + j + '" type="text" inputmode="decimal" value="0"></td>';
+  }
+  VDE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + rowX + "</tr>" + rowY + "</tr></tbody>";
+  vdRenderMatrix();
+}
+function vdFillValues(n, xs, ys){
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById("vd-x-" + j); if (ex) ex.value = xs[j];
+    const ey = document.getElementById("vd-y-" + j); if (ey) ey.value = ys[j];
+  }
+}
+function vdReadTable(){
+  const n = Math.max(2, Math.min(6, Math.round(Number(VDE.n().value) || 2)));
+  const xs = [], ys = [];
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById("vd-x-" + j), ey = document.getElementById("vd-y-" + j);
+    const vx = Number(String(ex ? ex.value : "").trim().replace(",", "."));
+    const vy = Number(String(ey ? ey.value : "").trim().replace(",", "."));
+    if (!isFinite(vx)) throw new Error("x" + j + " no es un número válido");
+    if (!isFinite(vy)) throw new Error("y" + j + " no es un número válido");
+    xs.push(vx); ys.push(vy);
+  }
+  return { n, xs, ys };
+}
+function vdRenderMatrix(){
+  let xs, ys, n;
+  try{ ({ n, xs, ys } = vdReadTable()); } catch(e){ document.getElementById("vdMatrix").innerHTML = ""; return; }
+  let rows = "";
+  for (let i = 0; i < n; i++){
+    let cells = "";
+    for (let j = 0; j < n; j++) cells += '<div class="mcell">' + (j === 0 ? "1" : trimNum(Math.pow(xs[i], j), 4)) + "</div>";
+    cells += '<div class="mcell" style="background:var(--accent-wash);color:var(--accent-ink)">' + trimNum(ys[i], 4) + "</div>";
+    rows += '<div class="matdisp" style="grid-template-columns:repeat(' + (n + 1) + ',auto);margin-bottom:4px">' + cells + "</div>";
+  }
+  document.getElementById("vdMatrix").innerHTML = '<div class="matdisp-wrap">' + rows + "</div>";
+}
+(function(){
+  const sel = document.getElementById("vdPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' + VD_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = VD_EJEMPLOS[Number(sel.value)];
+    vdBuildGrid(e.n);
+    vdFillValues(e.n, e.xs, e.ys);
+    document.getElementById("vdEval").value = e.ev;
+    vdRenderMatrix();
+  });
+  document.getElementById("vdResize").addEventListener("click", () => vdBuildGrid(Number(VDE.n().value) || 3));
+  document.getElementById("vdGrid").addEventListener("input", vdRenderMatrix);
+  vdBuildGrid(3);
+  vdFillValues(3, VD_EJEMPLOS[0].xs, VD_EJEMPLOS[0].ys);
+  document.getElementById("vdEval").value = VD_EJEMPLOS[0].ev;
+  vdRenderMatrix();
+})();
+
+const VD_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+XS = [80, 100, 120]
+YS = [10.0, 10.5, 9.5]
+X_EVAL = 90
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def vandermonde_resolver(xs, ys):
+    n = len(xs)
+    V = [[xi ** j for j in range(n)] for xi in xs]   # matriz de Vandermonde
+    M = [V[i][:] + [ys[i]] for i in range(n)]         # matriz aumentada
+
+    for col in range(n):                              # Gauss con pivoteo parcial
+        piv = max(range(col, n), key=lambda r: abs(M[r][col]))
+        M[col], M[piv] = M[piv], M[col]
+        for r in range(col + 1, n):
+            f = M[r][col] / M[col][col]
+            for c in range(col, n + 1):
+                M[r][c] -= f * M[col][c]
+
+    a = [0.0] * n
+    for i in range(n - 1, -1, -1):
+        s = M[i][n] - sum(M[i][j] * a[j] for j in range(i + 1, n))
+        a[i] = s / M[i][i]
+    return a
+
+def evaluar(a, x):
+    return sum(coef * x ** i for i, coef in enumerate(a))
+
+coeficientes = vandermonde_resolver(XS, YS)
+print("Coeficientes a0..an:", coeficientes)
+print(f"P({X_EVAL}) = {evaluar(coeficientes, X_EVAL):.6f}")`;
+
+function vdRun(){
+  VDE.err().textContent = "";
+  try{
+    const { n, xs, ys } = vdReadTable();
+    const seen = new Set();
+    xs.forEach(x => { const k = x.toFixed(9); if (seen.has(k)) throw new Error("Hay valores de x repetidos: la matriz de Vandermonde sería singular"); seen.add(k); });
+    const dec = Math.max(0, Math.min(12, Math.round(Number(document.getElementById("vdDec").value) || 6)));
+    const xEval = Number(String(document.getElementById("vdEval").value).replace(",", "."));
+    if (!isFinite(xEval)) throw new Error("El valor de x a evaluar no es válido");
+
+    const V = xs.map(xi => Array.from({ length: n }, (_, j) => Math.pow(xi, j)));
+    const a = gaussSolve(V, ys);
+    const result = polyEval(a, xEval);
+
+    const solRows = a.map((v, i) => "<tr><td class=\"l\">a<sub>" + i + "</sub></td><td>" + trimNum(v, dec) + "</td></tr>").join("");
+
+    document.getElementById("vdOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Solución del sistema</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">Coeficiente</th><th>Valor</th></tr></thead><tbody>' + solRows + "</tbody></table></div>" +
+        '<p class="tcap" style="margin-top:12px">Polinomio interpolador:</p>' +
+        '<div class="formula">P(x) = ' + polyToStr(a, dec) + "</div>" +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">Valor interpolado</div>' +
+          '<div class="answer-val" style="font-size:20px">P(' + trimNum(xEval, 4) + ') = ' + trimNum(result, dec) + '</div></div>' +
+          '<dl class="answer-facts"><div><dt>Grado</dt><dd>' + (n - 1) + '</dd></div><div><dt>N.º de puntos</dt><dd>' + n + '</dd></div></dl></div>' +
+      '</div></div>';
+  } catch(e){
+    VDE.err().textContent = e.message;
+    VDE.out().innerHTML = "";
+  }
+}
+document.getElementById("vdRun").addEventListener("click", vdRun);
+document.getElementById("vdCode").innerHTML = hl(VD_PY_CODE);
+
+/* ============================================================
+   LAGRANGE
+   ============================================================ */
+const LG_EJEMPLOS = [
+  { t: "GAA: latencia vs. RAM en un clúster (4 puntos, grado 3)", n: 4, xs: [2, 4, 8, 12], ys: [150, 85, 50, 70], ev: 6 },
+  { t: "Guía: ln(2), grado 2 (x = 1, 4, 6)", n: 3, xs: [1, 4, 6], ys: [0, 1.386294, 1.791760], ev: 2 }
+];
+const LGE = {
+  n: () => document.getElementById("lgN"),
+  grid: () => document.getElementById("lgGrid"),
+  err: () => document.getElementById("lgErr"),
+  out: () => document.getElementById("lgOut")
+};
+function lgBuildGrid(n){
+  n = Math.max(2, Math.min(6, Math.round(n)));
+  LGE.n().value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>P<sub>" + j + "</sub></th>";
+  head += "</tr>";
+  let rowX = "<tr><td class=\"mrowlbl\">x</td>", rowY = "<tr><td class=\"mrowlbl\">y</td>";
+  for (let j = 0; j < n; j++){
+    rowX += '<td><input id="lg-x-' + j + '" type="text" inputmode="decimal" value="' + j + '"></td>';
+    rowY += '<td><input id="lg-y-' + j + '" type="text" inputmode="decimal" value="0"></td>';
+  }
+  LGE.grid().innerHTML = "<thead>" + head + "</thead><tbody>" + rowX + "</tr>" + rowY + "</tr></tbody>";
+}
+function lgFillValues(n, xs, ys){
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById("lg-x-" + j); if (ex) ex.value = xs[j];
+    const ey = document.getElementById("lg-y-" + j); if (ey) ey.value = ys[j];
+  }
+}
+function lgReadTable(){
+  const n = Math.max(2, Math.min(6, Math.round(Number(LGE.n().value) || 2)));
+  const xs = [], ys = [];
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById("lg-x-" + j), ey = document.getElementById("lg-y-" + j);
+    const vx = Number(String(ex ? ex.value : "").trim().replace(",", "."));
+    const vy = Number(String(ey ? ey.value : "").trim().replace(",", "."));
+    if (!isFinite(vx)) throw new Error("x" + j + " no es un número válido");
+    if (!isFinite(vy)) throw new Error("y" + j + " no es un número válido");
+    xs.push(vx); ys.push(vy);
+  }
+  return { n, xs, ys };
+}
+(function(){
+  const sel = document.getElementById("lgPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' + LG_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = LG_EJEMPLOS[Number(sel.value)];
+    lgBuildGrid(e.n);
+    lgFillValues(e.n, e.xs, e.ys);
+    document.getElementById("lgEval").value = e.ev;
+  });
+  document.getElementById("lgResize").addEventListener("click", () => lgBuildGrid(Number(LGE.n().value) || 4));
+  lgBuildGrid(4);
+  lgFillValues(4, LG_EJEMPLOS[0].xs, LG_EJEMPLOS[0].ys);
+  document.getElementById("lgEval").value = LG_EJEMPLOS[0].ev;
+})();
+
+const LG_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+XS = [2, 4, 8, 12]         # memoria RAM asignada (GB)
+YS = [150, 85, 50, 70]     # latencia media (ms)
+X_EVAL = 6                  # GB a evaluar
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA  (motor O(n^2), bucles anidados)
+# ==========================================================
+def lagrange(xs, ys, x):
+    n = len(xs)
+    suma = 0.0
+    for k in range(n):                 # bucle externo: un termino por nodo
+        term = ys[k]
+        for i in range(n):             # bucle interno: producto de Lk(x)
+            if i != k:
+                term *= (x - xs[i]) / (xs[k] - xs[i])
+        suma += term
+    return suma
+
+resultado = lagrange(XS, YS, X_EVAL)
+print(f"P({X_EVAL}) = {resultado:.6f}")`;
+
+function lgRun(){
+  LGE.err().textContent = "";
+  try{
+    const { n, xs, ys } = lgReadTable();
+    const seen = new Set();
+    xs.forEach(x => { const k = x.toFixed(9); if (seen.has(k)) throw new Error("Hay valores de x repetidos entre los nodos"); seen.add(k); });
+    const dec = Math.max(0, Math.min(12, Math.round(Number(document.getElementById("lgDec").value) || 6)));
+    const xEval = Number(String(document.getElementById("lgEval").value).replace(",", "."));
+    if (!isFinite(xEval)) throw new Error("x_eval no es un número válido");
+
+    let lkRows = "", steps = "", sum = 0;
+    for (let k = 0; k < n; k++){
+      const basis = lagrangeBasis(xs, k);
+      let numProd = 1, chain = [];
+      for (let i = 0; i < n; i++){
+        if (i === k) continue;
+        const num = xEval - xs[i], den = xs[k] - xs[i];
+        chain.push("(" + trimNum(xEval, 4) + " − " + trimNum(xs[i], 4) + ")/(" + trimNum(xs[k], 4) + " − " + trimNum(xs[i], 4) + ")");
+        numProd *= num / den;
+      }
+      const term = ys[k] * numProd;
+      sum += term;
+      lkRows += "<tr><td class=\"l\">L<sub>" + k + "</sub>(x)</td><td class=\"l\" style=\"white-space:normal\">" + basis.factored + "</td><td>" + trimNum(numProd, 6) + "</td></tr>";
+      steps += "<li>L<sub>" + k + "</sub>(" + trimNum(xEval, 4) + ") = " + chain.join(" · ") + " = <b>" + trimNum(numProd, 6) + "</b> &nbsp;→&nbsp; y<sub>" + k + "</sub>·L<sub>" + k + "</sub> = " + trimNum(ys[k], 6) + " × " + trimNum(numProd, 6) + " = <b>" + trimNum(term, 6) + "</b></li>";
+    }
+    const coeffs = lagrangeCoeffs(xs, ys);
+    const resultFromCoeffs = polyEval(coeffs, xEval);
+
+    const pts = xs.map((x, i) => ({ x, y: ys[i] }));
+    const xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
+    const svg = buildPlot(pts, coeffs, xmin, xmax, { x: xEval, y: resultFromCoeffs });
+
+    document.getElementById("lgOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Polinomios base L<sub>k</sub>(x)</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">Base</th><th class="l">Forma factorizada</th><th>L<sub>k</sub>(x<sub>eval</sub>)</th></tr></thead><tbody>' + lkRows + '</tbody></table></div>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Pasos de sustitución numérica en x = ' + trimNum(xEval, 4) + '</h3></div><div class="panel-body">' +
+        '<ul class="steplist">' + steps + '<li>P(' + trimNum(xEval, 4) + ') = Σ y<sub>k</sub>·L<sub>k</sub>(' + trimNum(xEval, 4) + ') = <b>' + trimNum(sum, dec) + '</b></li></ul>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Polinomio interpolador — forma estándar</h3></div><div class="panel-body">' +
+        '<div class="formula">P(x) = ' + polyToStr(coeffs, dec) + '</div>' +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
+          '<div class="answer-lbl">Valor interpolado</div>' +
+          '<div class="answer-val" style="font-size:20px">P(' + trimNum(xEval, 4) + ') = ' + trimNum(resultFromCoeffs, dec) + '</div></div>' +
+          '<dl class="answer-facts"><div><dt>Grado</dt><dd>' + (n - 1) + '</dd></div><div><dt>N.º de nodos</dt><dd>' + n + '</dd></div></dl></div>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Gráfica — puntos, curva P(x) y punto interpolado</h3></div><div class="panel-body">' +
+        '<div class="plotwrap">' + svg + '</div>' +
+        '<div class="plotlegend"><span><i style="background:var(--stop)"></i>Puntos experimentales</span><span><i style="background:var(--accent);border-radius:2px;width:16px;height:3px"></i>P(x)</span><span><i style="background:var(--verde)"></i>Punto interpolado (x<sub>eval</sub>, P(x<sub>eval</sub>))</span></div>' +
+      '</div></div>';
+  } catch(e){
+    LGE.err().textContent = e.message;
+    LGE.out().innerHTML = "";
+  }
+}
+document.getElementById("lgRun").addEventListener("click", lgRun);
+document.getElementById("lgCode").innerHTML = hl(LG_PY_CODE);
 
 /* ---- tema ---- */
 const root = document.documentElement;
