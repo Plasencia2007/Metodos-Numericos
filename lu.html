@@ -2382,6 +2382,23 @@ function lagrangeBasis(xs, k){
   const coeffs = poly.map(c => c / denom);
   return { coeffs, denom, factored: factors.join("") + " / " + trimNum(denom, 6) };
 }
+/* igual que lagrangeBasis, pero además guarda cada multiplicación intermedia del numerador
+   (x - x_i) uno por uno, para mostrar la expansión algebraica paso a paso */
+function lagrangeBasisWithSteps(xs, k){
+  const n = xs.length;
+  let poly = [1], denom = 1, expSteps = [];
+  for (let i = 0; i < n; i++){
+    if (i === k) continue;
+    poly = polyMulLinear(poly, xs[i]);
+    denom *= (xs[k] - xs[i]);
+    expSteps.push({
+      factor: "(x " + (xs[i] >= 0 ? "− " + trimNum(xs[i], 4) : "+ " + trimNum(-xs[i], 4)) + ")",
+      poly: poly.slice()
+    });
+  }
+  const coeffs = poly.map(c => c / denom);
+  return { coeffs, denom, numerator: poly, expSteps };
+}
 function lagrangeCoeffs(xs, ys){
   const n = xs.length;
   let total = new Array(n).fill(0);
@@ -2411,6 +2428,52 @@ function gaussSolve(A, b){
     x[i] = s / M[i][i];
   }
   return x;
+}
+/* muestra una matriz aumentada [.. | b] usando las celdas .matdisp, con la última columna resaltada */
+function matDispGrid(M, dec){
+  dec = dec == null ? 4 : dec;
+  const m = M[0].length;
+  let rows = "";
+  for (let i = 0; i < M.length; i++){
+    let cells = "";
+    for (let j = 0; j < m; j++){
+      const aug = j === m - 1;
+      cells += '<div class="mcell"' + (aug ? ' style="background:var(--accent-wash);color:var(--accent-ink)"' : "") + ">" + trimNum(M[i][j], dec) + "</div>";
+    }
+    rows += '<div class="matdisp" style="grid-template-columns:repeat(' + m + ',auto);margin-bottom:4px">' + cells + "</div>";
+  }
+  return '<div class="matdisp-wrap">' + rows + "</div>";
+}
+/* Gauss con pivoteo parcial, guardando cada paso intermedio (matriz tras cada operación) para mostrarlo */
+function gaussSolveSteps(A, b, dec){
+  const n = A.length;
+  let M = A.map((row, i) => row.slice().concat([b[i]]));
+  const steps = [{ title: "Matriz aumentada inicial [V | y]", M: M.map(r => r.slice()) }];
+  for (let col = 0; col < n; col++){
+    let piv = col;
+    for (let r = col + 1; r < n; r++) if (Math.abs(M[r][col]) > Math.abs(M[piv][col])) piv = r;
+    if (Math.abs(M[piv][col]) < 1e-12) throw new Error("Sistema singular: revisa que los x_i sean todos distintos");
+    if (piv !== col){
+      const tmp = M[piv]; M[piv] = M[col]; M[col] = tmp;
+      steps.push({ title: "Pivoteo parcial: intercambia F" + (col + 1) + " ↔ F" + (piv + 1), M: M.map(r => r.slice()) });
+    }
+    let opDescs = [];
+    for (let r = col + 1; r < n; r++){
+      const f = M[r][col] / M[col][col];
+      if (Math.abs(f) < 1e-14) continue;
+      opDescs.push("F" + (r + 1) + " ← F" + (r + 1) + " − (" + trimNum(f, dec) + ")·F" + (col + 1));
+      for (let c = col; c <= n; c++) M[r][c] -= f * M[col][c];
+    }
+    if (opDescs.length) steps.push({ title: "Eliminar columna " + (col + 1) + ": " + opDescs.join(", "), M: M.map(r => r.slice()) });
+  }
+  const x = new Array(n), backSteps = [];
+  for (let i = n - 1; i >= 0; i--){
+    let s = M[i][n], terms = [];
+    for (let j = i + 1; j < n; j++){ s -= M[i][j] * x[j]; terms.push(trimNum(M[i][j], dec) + "·a" + j); }
+    x[i] = s / M[i][i];
+    backSteps.push("a<sub>" + i + "</sub> = (" + trimNum(M[i][n], dec) + (terms.length ? " − " + terms.join(" − ") : "") + ") / " + trimNum(M[i][i], dec) + " = <b>" + trimNum(x[i], Math.max(dec, 6)) + "</b>");
+  }
+  return { x, steps, backSteps };
 }
 
 /* ============================================================
@@ -2706,13 +2769,38 @@ function vdRun(){
     if (!isFinite(xEval)) throw new Error("El valor de x a evaluar no es válido");
 
     const V = xs.map(xi => Array.from({ length: n }, (_, j) => Math.pow(xi, j)));
-    const a = gaussSolve(V, ys);
+    const { x: a, steps, backSteps } = gaussSolveSteps(V, ys, dec);
     const result = polyEval(a, xEval);
 
     const solRows = a.map((v, i) => "<tr><td class=\"l\">a<sub>" + i + "</sub></td><td>" + trimNum(v, dec) + "</td></tr>").join("");
 
+    /* Paso 0 — el sistema tal como se plantea a mano: Pn(xi) = yi para cada punto, antes de armar la matriz */
+    const eqRows = xs.map((xi, i) => {
+      let terms = ["a<sub>0</sub>"];
+      for (let j = 1; j < n; j++){
+        const xp = trimNum(xi, 4) + (j === 1 ? "" : "<sup>" + j + "</sup>");
+        terms.push("a<sub>" + j + "</sub>·" + xp);
+      }
+      return terms.join(" + ") + " = " + trimNum(ys[i], 4);
+    });
+    const eqHtml = eqRows.map(r => '<div class="formula" style="margin-bottom:6px">' + r + "</div>").join("");
+
+    const stepsHtml = steps.map(s =>
+      '<p class="tcap" style="margin:14px 0 6px"><b style="color:var(--ink)">' + esc(s.title) + '</b></p>' + matDispGrid(s.M, dec)
+    ).join("");
+    const backHtml = '<ul class="steplist">' + backSteps.map(s => "<li>" + s + "</li>").join("") + '</ul>';
+
     document.getElementById("vdOut").innerHTML =
-      '<div class="panel"><div class="panel-head"><h3 class="sec">Solución del sistema</h3></div><div class="panel-body">' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Plantear el sistema P<sub>n</sub>(x<sub>i</sub>) = y<sub>i</sub></h3></div><div class="panel-body">' +
+        '<p class="tcap" style="margin:0 0 10px">Por cada punto (x<sub>i</sub>, y<sub>i</sub>) se sustituye x<sub>i</sub> en P<sub>n</sub>(x) = a₀ + a₁x + a₂x² + ⋯, dejando a₀…aₙ como incógnitas — así es como se plantea a mano, antes de pasar a la matriz:</p>' +
+        eqHtml +
+      '</div></div>' +
+      '<details class="code" open><summary>Paso 5 — Ver el proceso completo: eliminación de Gauss y sustitución hacia atrás</summary>' +
+        '<div class="panel-body">' + stepsHtml +
+          '<p class="tcap" style="margin:16px 0 6px"><b style="color:var(--ink)">Sustitución hacia atrás</b></p>' + backHtml +
+        '</div>' +
+      '</details>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Solución del sistema</h3></div><div class="panel-body">' +
         '<div class="tablewrap"><table class="data"><thead><tr><th class="l">Coeficiente</th><th>Valor</th></tr></thead><tbody>' + solRows + "</tbody></table></div>" +
         '<p class="tcap" style="margin-top:12px">Polinomio interpolador:</p>' +
         '<div class="formula">P(x) = ' + polyToStr(a, dec) + "</div>" +
@@ -2824,9 +2912,10 @@ function lgRun(){
     const xEval = Number(String(document.getElementById("lgEval").value).replace(",", "."));
     if (!isFinite(xEval)) throw new Error("x_eval no es un número válido");
 
-    let lkRows = "", steps = "", sum = 0;
+    let lkRows = "", steps = "", sum = 0, devHtml = "";
+    const termPolys = [];
     for (let k = 0; k < n; k++){
-      const basis = lagrangeBasis(xs, k);
+      const basis = lagrangeBasisWithSteps(xs, k);
       let numProd = 1, chain = [];
       for (let i = 0; i < n; i++){
         if (i === k) continue;
@@ -2836,11 +2925,41 @@ function lgRun(){
       }
       const term = ys[k] * numProd;
       sum += term;
-      lkRows += "<tr><td class=\"l\">L<sub>" + k + "</sub>(x)</td><td class=\"l\" style=\"white-space:normal\">" + basis.factored + "</td><td>" + trimNum(numProd, 6) + "</td></tr>";
+      const factored = basis.expSteps.map(s => s.factor).join("") + " / " + trimNum(basis.denom, 6);
+      lkRows += "<tr><td class=\"l\">L<sub>" + k + "</sub>(x)</td><td class=\"l\" style=\"white-space:normal\">" + factored + "</td><td>" + trimNum(numProd, 6) + "</td></tr>";
       steps += "<li>L<sub>" + k + "</sub>(" + trimNum(xEval, 4) + ") = " + chain.join(" · ") + " = <b>" + trimNum(numProd, 6) + "</b> &nbsp;→&nbsp; y<sub>" + k + "</sub>·L<sub>" + k + "</sub> = " + trimNum(ys[k], 6) + " × " + trimNum(numProd, 6) + " = <b>" + trimNum(term, 6) + "</b></li>";
+
+      /* desarrollo algebraico: expandir el numerador factor por factor, luego dividir entre el denominador */
+      let expandRows = basis.expSteps.map((s, idx) =>
+        "<li>× " + s.factor + " &nbsp;→&nbsp; " + polyToStr(s.poly, 6) + "</li>"
+      ).join("");
+      const lkCoeffs = basis.coeffs;
+      const termCoeffs = lkCoeffs.map(c => c * ys[k]);
+      termPolys.push(termCoeffs);
+      devHtml +=
+        '<div class="panel" style="margin-top:' + (k === 0 ? "0" : "16px") + '"><div class="panel-head"><h3 class="sec">L<sub>' + k + '</sub>(x) — desde el producto de factores</h3></div><div class="panel-body">' +
+          '<ul class="steplist">' + expandRows + '</ul>' +
+          '<p class="tcap" style="margin:12px 0 4px">Dividiendo el numerador expandido entre el denominador (' + trimNum(basis.denom, 6) + '):</p>' +
+          '<div class="formula">L<sub>' + k + '</sub>(x) = ' + polyToStr(lkCoeffs, 6) + '</div>' +
+          '<p class="tcap" style="margin:12px 0 4px">Multiplicando por y<sub>' + k + '</sub> = ' + trimNum(ys[k], 6) + ':</p>' +
+          '<div class="formula">y<sub>' + k + '</sub>·L<sub>' + k + '</sub>(x) = ' + polyToStr(termCoeffs, 6) + '</div>' +
+        '</div></div>';
     }
     const coeffs = lagrangeCoeffs(xs, ys);
     const resultFromCoeffs = polyEval(coeffs, xEval);
+
+    /* suma acumulada término a término, hasta llegar a P(x) */
+    let running = new Array(n).fill(0), sumHtml = "";
+    termPolys.forEach((tc, k) => {
+      running = running.map((v, i) => v + (tc[i] || 0));
+      sumHtml += "<li>+ y<sub>" + k + "</sub>·L<sub>" + k + "</sub>(x) &nbsp;→&nbsp; acumulado = " + polyToStr(running.slice(0, n), 6) + "</li>";
+    });
+    devHtml +=
+      '<div class="panel" style="margin-top:16px"><div class="panel-head"><h3 class="sec">Suma de todos los términos y<sub>k</sub>·L<sub>k</sub>(x)</h3></div><div class="panel-body">' +
+        '<ul class="steplist">' + sumHtml + '</ul>' +
+        '<p class="tcap" style="margin:12px 0 4px">Resultado — P(x) en forma estándar a<sub>' + (n - 1) + '</sub>x<sup>' + (n - 1) + '</sup> + ⋯ + a₁x + a₀:</p>' +
+        '<div class="formula">P(x) = ' + polyToStr(coeffs, dec) + '</div>' +
+      '</div></div>';
 
     const pts = xs.map((x, i) => ({ x, y: ys[i] }));
     const xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
@@ -2850,10 +2969,13 @@ function lgRun(){
       '<div class="panel"><div class="panel-head"><h3 class="sec">Polinomios base L<sub>k</sub>(x)</h3></div><div class="panel-body">' +
         '<div class="tablewrap"><table class="data"><thead><tr><th class="l">Base</th><th class="l">Forma factorizada</th><th>L<sub>k</sub>(x<sub>eval</sub>)</th></tr></thead><tbody>' + lkRows + '</tbody></table></div>' +
       '</div></div>' +
-      '<div class="panel"><div class="panel-head"><h3 class="sec">Pasos de sustitución numérica en x = ' + trimNum(xEval, 4) + '</h3></div><div class="panel-body">' +
+      '<details class="code" open><summary>Paso 3 — Ver el desarrollo algebraico completo: de los factores a P(x)</summary>' +
+        '<div class="panel-body">' + devHtml + '</div>' +
+      '</details>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Sustitución numérica en x = ' + trimNum(xEval, 4) + '</h3></div><div class="panel-body">' +
         '<ul class="steplist">' + steps + '<li>P(' + trimNum(xEval, 4) + ') = Σ y<sub>k</sub>·L<sub>k</sub>(' + trimNum(xEval, 4) + ') = <b>' + trimNum(sum, dec) + '</b></li></ul>' +
       '</div></div>' +
-      '<div class="panel"><div class="panel-head"><h3 class="sec">Polinomio interpolador — forma estándar</h3></div><div class="panel-body">' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Polinomio interpolador, forma estándar</h3></div><div class="panel-body">' +
         '<div class="formula">P(x) = ' + polyToStr(coeffs, dec) + '</div>' +
         '<div class="answer" style="margin-top:16px"><div class="answer-main">' +
           '<div class="answer-lbl">Valor interpolado</div>' +
