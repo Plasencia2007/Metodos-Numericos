@@ -360,6 +360,10 @@ pre.py .nu{ color: #B0840F; }
 .steplist li{ padding: 10px 13px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel-sunk);
   font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--ink-2); overflow-x: auto; }
 .steplist li b{ color: var(--ink); }
+table.tdd tbody td{ padding: 4px 16px; }
+table.tdd tbody tr:hover td{ background: transparent; }
+.circ{ display: inline-block; padding: 1px 9px; border: 2px solid var(--stop); border-radius: 999px; }
+.boxg{ display: inline-block; padding: 1px 8px; border: 2px solid var(--verde); border-radius: 4px; }
 .plotwrap{ overflow-x: auto; max-width: 100%; display: flex; justify-content: center; padding: 6px 0; }
 .plotlegend{ display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 11.5px; color: var(--ink-3); }
 .plotlegend span{ display: inline-flex; align-items: center; gap: 6px; }
@@ -398,6 +402,9 @@ pre.py .nu{ color: #B0840F; }
       <button class="navlink" data-view="lineal"><span class="glyph" aria-hidden="true">⑪</span>Interpolación lineal</button>
       <button class="navlink" data-view="vander"><span class="glyph" aria-hidden="true">⑫</span>Polinómica (Vandermonde)</button>
       <button class="navlink" data-view="lagrange"><span class="glyph" aria-hidden="true">⑬</span>Lagrange</button>
+      <button class="navlink" data-view="newton"><span class="glyph" aria-hidden="true">⑭</span>Newton (dif. divididas)</button>
+      <button class="navlink" data-view="gregory"><span class="glyph" aria-hidden="true">⑮</span>Newton-Gregory</button>
+      <button class="navlink" data-view="errorint"><span class="glyph" aria-hidden="true">⑯</span>Error de interpolación</button>
     </div>
 
     <div class="navgroup">
@@ -845,6 +852,130 @@ pre.py .nu{ color: #B0840F; }
       <details class="code" style="margin-top:22px">
         <summary>Código en Python — Lagrange (bucles anidados O(n²))</summary>
         <pre class="py"><code id="lgCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== NEWTON (DIFERENCIAS DIVIDIDAS) ===================== -->
+    <section class="view" id="view-newton">
+      <header>
+        <p class="eyebrow">Sesión 9 · Interpolación</p>
+        <h2>Interpolación de Newton — diferencias divididas</h2>
+      </header>
+      <p class="lede">A diferencia de Lagrange, pasar de grado n a grado n+1 solo exige <em>añadir un término más</em>: no se rehace nada. Los coeficientes son las diferencias divididas f[x₀], f[x₀,x₁], f[x₀,x₁,x₂], … — la primera fila de cada columna de la tabla — y el polinomio es P<sub>n</sub>(x) = Σ f[x₀,…,x<sub>k</sub>]·Π(x − x<sub>j</sub>).</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Tabla de datos (x, f(x))</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="nwN">N.º de puntos (n+1)</label><input id="nwN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="nwPreset">Ejemplos de la guía / clase</label><select id="nwPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="nwResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="nwGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Grado a usar y punto a evaluar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="nwDeg">Grado del polinomio</label><select id="nwDeg"></select></div>
+            <div class="field"><label for="nwEval">Valor de x a evaluar</label><input id="nwEval" type="text" inputmode="decimal" value="90"></div>
+            <div class="field"><label for="nwDec">Decimales</label><input id="nwDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <p class="tcap">Si eliges un grado menor que n, se usan los puntos consecutivos más cercanos a x (el polinomio "apropiado" del ejercicio de la guía).</p>
+          <div class="rowend"><button class="btn" id="nwRun" type="button">Construir polinomio de Newton</button></div>
+          <div class="errbox" id="nwErr"></div>
+        </div>
+      </div>
+
+      <div id="nwOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — Newton con diferencias divididas</summary>
+        <pre class="py"><code id="nwCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== NEWTON-GREGORY ===================== -->
+    <section class="view" id="view-gregory">
+      <header>
+        <p class="eyebrow">Sesión 9 · Interpolación</p>
+        <h2>Newton-Gregory — puntos equiespaciados</h2>
+      </header>
+      <p class="lede">Si los puntos están igualmente espaciados (x<sub>i</sub> − x<sub>i−1</sub> = h), las diferencias divididas se reducen a diferencias finitas progresivas: <span class="m">a<sub>i</sub> = Δ<sup>i</sup>f₀ / (i! · h<sup>i</sup>)</span>, y el polinomio progresivo es P(x) = a₀ + a₁(x−x₀) + a₂(x−x₀)(x−x₁) + ⋯</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Tabla de datos (x, f(x)) — equiespaciados</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="grN">N.º de puntos (n+1)</label><input id="grN" type="text" inputmode="numeric" value="7"></div>
+            <div class="field"><label for="grPreset">Ejemplos de la guía</label><select id="grPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="grResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <div class="matbuild" style="margin-top:14px"><table class="matgrid" id="grGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Punto a evaluar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="grEval">Valor de x a evaluar</label><input id="grEval" type="text" inputmode="decimal" value="0"></div>
+            <div class="field"><label for="grDec">Decimales</label><input id="grDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <div class="rowend"><button class="btn" id="grRun" type="button">Construir polinomio progresivo</button></div>
+          <div class="errbox" id="grErr"></div>
+        </div>
+      </div>
+
+      <div id="grOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — Newton-Gregory (diferencias finitas)</summary>
+        <pre class="py"><code id="grCode"></code></pre>
+      </details>
+    </section>
+
+    <!-- ===================== ERROR DE INTERPOLACIÓN ===================== -->
+    <section class="view" id="view-errorint">
+      <header>
+        <p class="eyebrow">Sesión 9 · Errores en la interpolación</p>
+        <h2>Error de truncamiento por interpolación</h2>
+      </header>
+      <p class="lede">En los nodos P<sub>n</sub>(x<sub>k</sub>) = f(x<sub>k</sub>), pero en cualquier otro x aparece un error E<sub>n</sub>(x) = f(x) − P<sub>n</sub>(x) = (x−x₀)⋯(x−x<sub>n</sub>)·f<sup>(n+1)</sup>(ξ)/(n+1)!. Solo se puede acotar cuando se conoce la expresión analítica de f(x): |E<sub>n</sub>(x)| ≤ Π|x−x<sub>i</sub>|/(n+1)! · máx|f<sup>(n+1)</sup>(t)|.</p>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">1 · Función conocida y nodos</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field" style="grid-column:1/-1"><label for="eiFn">f(x)</label><input id="eiFn" type="text" value="(3+x)/(1+x)" autocomplete="off" spellcheck="false"></div>
+            <div class="field"><label for="eiN">N.º de nodos (n+1)</label><input id="eiN" type="text" inputmode="numeric" value="3"></div>
+            <div class="field"><label for="eiPreset">Ejemplos de la guía</label><select id="eiPreset"></select></div>
+            <div class="field"><button class="btn ghost sm" id="eiResize" type="button" style="margin-top:19px">Generar tabla</button></div>
+          </div>
+          <p class="tcap">Usa x, + − * / ^, paréntesis y las funciones sin, cos, tan, exp, ln (natural), log (base 10), sqrt; constantes pi y e. Ejemplo: exp(x) − x^2 + 1</p>
+          <div class="matbuild" style="margin-top:10px"><table class="matgrid" id="eiGrid"></table></div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><h3 class="sec">2 · Punto a estimar</h3></div>
+        <div class="panel-body">
+          <div class="controls">
+            <div class="field"><label for="eiEval">Valor de x a interpolar</label><input id="eiEval" type="text" inputmode="decimal" value="0.25"></div>
+            <div class="field"><label for="eiDec">Decimales</label><input id="eiDec" type="text" inputmode="numeric" value="6"></div>
+          </div>
+          <div class="rowend"><button class="btn" id="eiRun" type="button">Calcular error y cota</button></div>
+          <div class="errbox" id="eiErr"></div>
+        </div>
+      </div>
+
+      <div id="eiOut"></div>
+
+      <details class="code" style="margin-top:22px">
+        <summary>Código en Python — cota del error de interpolación</summary>
+        <pre class="py"><code id="eiCode"></code></pre>
       </details>
     </section>
 
@@ -2361,7 +2492,7 @@ function polyToStr(coeffs, dec){
     const c = coeffs[i];
     if (Math.abs(c) < 1e-10 && !(i === 0 && parts.length === 0)) continue;
     const isUnit = Math.abs(Math.abs(c) - 1) < 1e-9 && i !== 0;
-    const av = isUnit ? "" : trimNum(Math.abs(c), dec);
+    const av = isUnit ? "" : (typeof dec === "function" ? dec(Math.abs(c)) : trimNum(Math.abs(c), dec));
     const sign = c < 0 ? (parts.length ? " − " : "−") : (parts.length ? " + " : "");
     const vp = i === 0 ? "" : (i === 1 ? "x" : "x<sup>" + i + "</sup>");
     parts.push(sign + av + vp);
@@ -2479,13 +2610,18 @@ function gaussSolveSteps(A, b, dec){
 /* ============================================================
    GRÁFICA SVG (puntos + curva + punto interpolado) — Interpolación
    ============================================================ */
-function buildPlot(pts, coeffs, xmin, xmax, evalPt){
+function buildPlot(pts, coeffs, xmin, xmax, evalPt, extraFn){
   const W = 640, H = 340, ML = 50, MR = 18, MT = 18, MB = 34;
   const plotW = W - ML - MR, plotH = H - MT - MB;
   const N = 220;
-  const ys = [];
-  for (let i = 0; i <= N; i++) ys.push(polyEval(coeffs, xmin + (xmax - xmin) * i / N));
+  const ys = [], extraVals = [];
+  for (let i = 0; i <= N; i++){
+    const xv = xmin + (xmax - xmin) * i / N;
+    ys.push(polyEval(coeffs, xv));
+    if (extraFn) extraVals.push(extraFn(xv));
+  }
   let yAll = ys.concat(pts.map(p => p.y));
+  if (extraFn) yAll = yAll.concat(extraVals.filter(v => isFinite(v)));
   if (evalPt) yAll = yAll.concat([evalPt.y]);
   let ymin = Math.min.apply(null, yAll), ymax = Math.max.apply(null, yAll);
   if (ymin === ymax){ ymin -= 1; ymax += 1; }
@@ -2508,6 +2644,17 @@ function buildPlot(pts, coeffs, xmin, xmax, evalPt){
   }
   svg += '<line x1="' + ML + '" y1="' + MT + '" x2="' + ML + '" y2="' + (MT + plotH) + '" style="stroke:var(--rule-strong);stroke-width:1"/>';
   svg += '<line x1="' + ML + '" y1="' + (MT + plotH) + '" x2="' + (ML + plotW) + '" y2="' + (MT + plotH) + '" style="stroke:var(--rule-strong);stroke-width:1"/>';
+  if (extraFn){
+    let epath = "", started = false;
+    for (let i = 0; i <= N; i++){
+      const v = extraVals[i];
+      if (!isFinite(v)){ started = false; continue; }
+      const xv = xmin + (xmax - xmin) * i / N;
+      epath += (started ? "L" : "M") + sx(xv).toFixed(2) + "," + sy(v).toFixed(2) + " ";
+      started = true;
+    }
+    svg += '<path d="' + epath + '" fill="none" style="stroke:var(--ink-3);stroke-width:1.8;stroke-dasharray:6,4"/>';
+  }
   svg += '<path d="' + path + '" fill="none" style="stroke:var(--accent);stroke-width:2.2"/>';
   pts.forEach(p => {
     svg += '<circle cx="' + sx(p.x).toFixed(2) + '" cy="' + sy(p.y).toFixed(2) + '" r="4.5" style="fill:var(--stop);stroke:var(--panel);stroke-width:1.5"/>';
@@ -2993,6 +3140,800 @@ function lgRun(){
 }
 document.getElementById("lgRun").addEventListener("click", lgRun);
 document.getElementById("lgCode").innerHTML = hl(LG_PY_CODE);
+
+/* ============================================================
+   SESIÓN 9 — utilidades comunes (Newton, Newton-Gregory, Error)
+   ============================================================ */
+function fracStr(v){
+  if (!isFinite(v)) return "—";
+  if (Math.abs(v - Math.round(v)) < 1e-9) return (v < -0.5 ? "−" : "") + Math.abs(Math.round(v));
+  for (let q = 2; q <= 64; q++){
+    const p = Math.round(v * q);
+    if (Math.abs(v - p / q) < 1e-9) return (p < 0 ? "−" : "") + Math.abs(p) + "/" + q;
+  }
+  return trimNum(v, 6);
+}
+const parN = (v, d) => v < 0 ? "(" + trimNum(v, d == null ? 6 : d) + ")" : trimNum(v, d == null ? 6 : d);
+function xFactor(xj){ return "(x " + (xj >= 0 ? "− " + trimNum(xj, 4) : "+ " + trimNum(-xj, 4)) + ")"; }
+function xFactorAt(xe, xj){ return "(" + trimNum(xe, 4) + (xj >= 0 ? " − " + trimNum(xj, 4) : " + " + trimNum(-xj, 4)) + ")"; }
+
+/* tabla genérica de puntos: p = prefijo de ids (p+"N", p+"Grid", p+"-x-j", p+"-y-j") */
+function ptsBuild(p, n, nMin, nMax, withY){
+  n = Math.max(nMin, Math.min(nMax, Math.round(n)));
+  document.getElementById(p + "N").value = n;
+  let head = "<tr><th></th>";
+  for (let j = 0; j < n; j++) head += "<th>P<sub>" + j + "</sub></th>";
+  head += "</tr>";
+  let rowX = '<tr><td class="mrowlbl">x</td>', rowY = '<tr><td class="mrowlbl">f(x)</td>';
+  for (let j = 0; j < n; j++){
+    rowX += '<td><input id="' + p + '-x-' + j + '" type="text" inputmode="decimal" value="' + j + '"></td>';
+    rowY += '<td><input id="' + p + '-y-' + j + '" type="text" inputmode="decimal" value="0"></td>';
+  }
+  document.getElementById(p + "Grid").innerHTML = "<thead>" + head + "</thead><tbody>" + rowX + "</tr>" + (withY ? rowY + "</tr>" : "") + "</tbody>";
+  return n;
+}
+function ptsFill(p, xs, ys){
+  for (let j = 0; j < xs.length; j++){
+    const ex = document.getElementById(p + "-x-" + j); if (ex) ex.value = xs[j];
+    if (ys){ const ey = document.getElementById(p + "-y-" + j); if (ey) ey.value = ys[j]; }
+  }
+}
+function ptsRead(p, nMin, nMax, withY){
+  const n = Math.max(nMin, Math.min(nMax, Math.round(Number(document.getElementById(p + "N").value) || nMin)));
+  const xs = [], ys = [];
+  for (let j = 0; j < n; j++){
+    const ex = document.getElementById(p + "-x-" + j);
+    const vx = Number(String(ex ? ex.value : "").trim().replace(",", "."));
+    if (!isFinite(vx)) throw new Error("x" + j + " no es un número válido");
+    xs.push(vx);
+    if (withY){
+      const ey = document.getElementById(p + "-y-" + j);
+      const vy = Number(String(ey ? ey.value : "").trim().replace(",", "."));
+      if (!isFinite(vy)) throw new Error("f(x" + j + ") no es un número válido");
+      ys.push(vy);
+    }
+  }
+  const seen = new Set();
+  xs.forEach(x => { const k = x.toFixed(9); if (seen.has(k)) throw new Error("Hay valores de x repetidos entre los nodos"); seen.add(k); });
+  return { n, xs, ys };
+}
+function readNum(id, msg){
+  const v = Number(String(document.getElementById(id).value).trim().replace(",", "."));
+  if (!isFinite(v)) throw new Error(msg);
+  return v;
+}
+function readDec(id){ return Math.max(0, Math.min(12, Math.round(Number(document.getElementById(id).value) || 6))); }
+
+/* diferencias divididas: T[k][j] = f[x_j..x_{j+k}] */
+function divDiffs(xs, fs){
+  const n = xs.length, T = [fs.slice()], ops = [[]];
+  for (let k = 1; k < n; k++){
+    const prev = T[k - 1], row = [], opRow = [];
+    for (let j = 0; j < n - k; j++){
+      const num = prev[j + 1] - prev[j], den = xs[j + k] - xs[j];
+      row.push(num / den);
+      opRow.push({ a: prev[j + 1], b: prev[j], x1: xs[j + k], x0: xs[j], val: num / den });
+    }
+    T.push(row); ops.push(opRow);
+  }
+  return { T, ops };
+}
+/* diferencias finitas progresivas: D[k][j] = Δ^k f_j */
+function finiteDiffs(fs){
+  const n = fs.length, D = [fs.slice()], ops = [[]];
+  for (let k = 1; k < n; k++){
+    const prev = D[k - 1], row = [], opRow = [];
+    for (let j = 0; j < n - k; j++){
+      row.push(prev[j + 1] - prev[j]);
+      opRow.push({ a: prev[j + 1], b: prev[j], val: prev[j + 1] - prev[j] });
+    }
+    D.push(row); ops.push(opRow);
+  }
+  return { D, ops };
+}
+/* expande P(x) = Σ c_k Π_{j<k}(x − x_j) a forma estándar, guardando cada término */
+function expandNewtonLike(xs, coef){
+  const n = coef.length;
+  let std = new Array(n).fill(0), basis = [1];
+  const termPolys = [];
+  for (let k = 0; k < n; k++){
+    const tp = new Array(n).fill(0);
+    basis.forEach((c, i) => { if (i < n) tp[i] = c * coef[k]; });
+    termPolys.push({ k, poly: tp });
+    for (let i = 0; i < n; i++) std[i] += tp[i];
+    basis = polyMulLinear(basis, xs[k]);
+  }
+  return { std, termPolys };
+}
+function newtonEvalParts(xs, coef, x){
+  let s = 0, prod = 1;
+  const parts = [];
+  for (let k = 0; k < coef.length; k++){
+    const aporte = coef[k] * prod;
+    s += aporte;
+    parts.push({ k, prod, aporte, acum: s });
+    prod *= (x - xs[k]);
+  }
+  return { value: s, parts };
+}
+function newtonFormulaStr(xs, coef, fmt){
+  let s = "";
+  for (let k = 0; k < coef.length; k++){
+    const c = coef[k], mag = fmt(Math.abs(c));
+    let prod = ""; for (let j = 0; j < k; j++) prod += xFactor(xs[j]);
+    s += k === 0 ? (c < 0 ? "−" : "") + mag : (c < 0 ? " − " : " + ") + mag + prod;
+  }
+  return s;
+}
+function newtonEvalStr(xs, coef, xe, fmt){
+  let s = "";
+  for (let k = 0; k < coef.length; k++){
+    const c = coef[k], mag = fmt(Math.abs(c));
+    let prod = ""; for (let j = 0; j < k; j++) prod += xFactorAt(xe, xs[j]);
+    s += k === 0 ? (c < 0 ? "−" : "") + mag : (c < 0 ? " − " : " + ") + mag + prod;
+  }
+  return s;
+}
+function ddName(j, k){
+  const a = []; for (let i = j; i <= j + k; i++) a.push("x<sub>" + i + "</sub>");
+  return "f[" + a.join(",") + "]";
+}
+/* tabla en diagonal (como la escribe el profesor): la entrada j de la columna k va entre las filas que la originan */
+function diagTable(T, xs, o){
+  o = o || {};
+  const n = xs.length, dec = o.dec == null ? 6 : o.dec, cls = o.cls || "circ";
+  const lab = o.labels || (k => k === 0 ? "f[x<sub>i</sub>]" : "orden " + k);
+  let head = '<tr><th class="l">x<sub>i</sub></th>';
+  for (let k = 0; k < n; k++) head += "<th>" + lab(k) + "</th>";
+  head += "</tr>";
+  let body = "";
+  for (let r = 0; r <= 2 * (n - 1); r++){
+    let row = '<tr><td class="l">' + (r % 2 === 0 ? trimNum(xs[r / 2], 4) : "") + "</td>";
+    for (let k = 0; k < n; k++){
+      const j = (r - k) / 2;
+      if (Number.isInteger(j) && j >= 0 && j <= n - 1 - k){
+        const v = trimNum(T[k][j], dec);
+        row += "<td>" + (j === 0 ? '<span class="' + cls + '">' + v + "</span>" : v) + "</td>";
+      } else row += "<td></td>";
+    }
+    body += row + "</tr>";
+  }
+  return '<div class="tablewrap"><table class="data tdd"><thead>' + head + "</thead><tbody>" + body + "</tbody></table></div>";
+}
+function pickWindow(xs, x, g){
+  let best = 0, bestScore = Infinity;
+  for (let s = 0; s + g < xs.length; s++){
+    const score = Math.max(Math.abs(x - xs[s]), Math.abs(x - xs[s + g]));
+    if (score < bestScore - 1e-12){ bestScore = score; best = s; }
+  }
+  return best;
+}
+function std2html(std, fmt){ return polyToStr(std, fmt); }
+
+/* ============================================================
+   NEWTON — DIFERENCIAS DIVIDIDAS
+   ============================================================ */
+const NW_EJEMPLOS = [
+  { t: "Clase: velocidad vs. rendimiento (60,80,100) — x = 90", xs: [60, 80, 100], ys: [9, 10, 10.5], ev: 90, deg: "all" },
+  { t: "Clase: 5 puntos (2,6,9,15,18) — tabla del profesor", xs: [2, 6, 9, 15, 18], ys: [-1, 3, 4, 7, 10], ev: 7, deg: "all" },
+  { t: "Guía: (1,2),(2,5),(4,17),(5,26) — f(3)", xs: [1, 2, 4, 5], ys: [2, 5, 17, 26], ev: 3, deg: "all" },
+  { t: "Guía: e^x + sen x en (0, 0.5, 1) — f(0.7)", xs: [0, 0.5, 1], ys: [1, 2.12, 3.55], ev: 0.7, deg: "all" },
+  { t: "Guía: ejercicio (1,2),(3,3),(4,2),(8,10)", xs: [1, 3, 4, 8], ys: [2, 3, 2, 10], ev: 5, deg: "all" },
+  { t: "Guía: 6 puntos, grado 3 apropiado — f(4.5)", xs: [2, 3, 4, 5, 6, 7], ys: [0.13, 0.19, 0.27, 0.38, 0.51, 0.67], ev: 4.5, deg: "3" }
+];
+function nwBuildDeg(n, keep){
+  let opts = '<option value="all">Todos los puntos (grado ' + (n - 1) + ")</option>";
+  for (let g = n - 2; g >= 1; g--) opts += '<option value="' + g + '">Grado ' + g + " (puntos más cercanos a x)</option>";
+  const sel = document.getElementById("nwDeg");
+  sel.innerHTML = opts;
+  if (keep && Array.prototype.some.call(sel.options, o => o.value === keep)) sel.value = keep;
+}
+(function(){
+  const sel = document.getElementById("nwPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' + NW_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = NW_EJEMPLOS[Number(sel.value)];
+    ptsBuild("nw", e.xs.length, 2, 8, true);
+    ptsFill("nw", e.xs, e.ys);
+    nwBuildDeg(e.xs.length, e.deg);
+    document.getElementById("nwEval").value = e.ev;
+  });
+  document.getElementById("nwResize").addEventListener("click", () => {
+    const n = ptsBuild("nw", Number(document.getElementById("nwN").value) || 3, 2, 8, true);
+    nwBuildDeg(n);
+  });
+  const e0 = NW_EJEMPLOS[0];
+  ptsBuild("nw", e0.xs.length, 2, 8, true);
+  ptsFill("nw", e0.xs, e0.ys);
+  nwBuildDeg(e0.xs.length, e0.deg);
+  document.getElementById("nwEval").value = e0.ev;
+})();
+
+const NW_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+XS = [60, 80, 100]
+FS = [9, 10, 10.5]
+X_EVAL = 90
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def diferencias_divididas(xs, fs):
+    n = len(xs)
+    tabla = [fs[:]]                       # columna 0: f[xi]
+    for k in range(1, n):
+        previa = tabla[-1]
+        tabla.append([
+            (previa[j + 1] - previa[j]) / (xs[j + k] - xs[j])
+            for j in range(n - k)
+        ])
+    return tabla
+
+def newton(xs, fs, x):
+    tabla = diferencias_divididas(xs, fs)
+    suma, producto = 0.0, 1.0
+    for k in range(len(xs)):
+        suma += tabla[k][0] * producto    # coeficiente = primera fila de cada columna
+        producto *= (x - xs[k])           # (x-x0)(x-x1)... se acumula
+    return suma, tabla
+
+valor, tabla = newton(XS, FS, X_EVAL)
+for k, col in enumerate(tabla):
+    print(f"orden {k}:", [round(v, 6) for v in col])
+print(f"P({X_EVAL}) = {valor:.6f}")`;
+
+function nwRun(){
+  document.getElementById("nwErr").textContent = "";
+  try{
+    const { n, xs, ys } = ptsRead("nw", 2, 8, true);
+    const dec = readDec("nwDec");
+    const xEval = readNum("nwEval", "El valor de x a evaluar no es válido");
+    const fmt = v => trimNum(v, dec);
+    let ux = xs, uf = ys, note = "";
+    const degSel = document.getElementById("nwDeg").value;
+    if (degSel !== "all"){
+      const g = Number(degSel);
+      const idx = xs.map((_, i) => i).sort((a, b) => xs[a] - xs[b]);
+      const sx = idx.map(i => xs[i]), sf = idx.map(i => ys[i]);
+      const s = pickWindow(sx, xEval, g);
+      ux = sx.slice(s, s + g + 1); uf = sf.slice(s, s + g + 1);
+      note = '<div class="note ok" style="margin-top:0;margin-bottom:16px"><b>Puntos elegidos para el grado ' + g + '</b>Se usan los ' + (g + 1) + ' puntos consecutivos más cercanos a x = ' + trimNum(xEval, 4) + ': x = ' + ux.map(v => trimNum(v, 4)).join(", ") + '.</div>';
+    }
+    const m = ux.length;
+    const { T, ops } = divDiffs(ux, uf);
+    const coef = T.map(r => r[0]);
+    const { std, termPolys } = expandNewtonLike(ux, coef);
+    const ev = newtonEvalParts(ux, coef, xEval);
+
+    /* Paso 3 — cada división */
+    let divRows = "";
+    for (let k = 1; k < m; k++){
+      for (let j = 0; j < m - k; j++){
+        const o = ops[k][j];
+        divRows += "<li>" + ddName(j, k) + " = (" + ddName(j + 1, k - 1) + " − " + ddName(j, k - 1) + ") / (x<sub>" + (j + k) + "</sub> − x<sub>" + j + "</sub>) = (" +
+          parN(o.a) + " − " + parN(o.b) + ") / (" + parN(o.x1, 4) + " − " + parN(o.x0, 4) + ") = <b>" + trimNum(o.val, 6) + "</b></li>";
+      }
+    }
+    /* Paso 4 — coeficientes */
+    const coefRows = coef.map((c, k) => "<li>" + ddName(0, k) + " = <b>" + trimNum(c, 6) + "</b></li>").join("");
+    /* Paso 6 — aportes */
+    let aportes = "";
+    ev.parts.forEach(p => {
+      aportes += "<tr><td class=\"l\">" + p.k + "</td><td>" + fmt(coef[p.k]) + "</td><td>" + (p.k === 0 ? "1" : trimNum(p.prod, 6)) + "</td><td>" + trimNum(p.aporte, 6) + "</td><td>" + trimNum(p.acum, 6) + "</td></tr>";
+    });
+    /* Paso 7 — desarrollo algebraico */
+    let devHtml = "", running = new Array(m).fill(0), sumHtml = "";
+    termPolys.forEach(tp => {
+      const prodStr = tp.k === 0 ? "" : Array.from({ length: tp.k }, (_, j) => xFactor(ux[j])).join("");
+      devHtml += "<li>T<sub>" + tp.k + "</sub> = " + fmt(coef[tp.k]) + (prodStr ? "·" + prodStr : "") + " &nbsp;→&nbsp; " + polyToStr(tp.poly, fmt) + "</li>";
+      running = running.map((v, i) => v + tp.poly[i]);
+      sumHtml += "<li>acumulado hasta T<sub>" + tp.k + "</sub> = " + polyToStr(running.slice(), fmt) + "</li>";
+    });
+    const maxDev = Math.max.apply(null, ux.map((x, i) => Math.abs(polyEval(std, x) - uf[i])));
+    const xmin = Math.min.apply(null, ux), xmax = Math.max.apply(null, ux);
+    const svg = buildPlot(ux.map((x, i) => ({ x, y: uf[i] })), std, xmin, xmax, { x: xEval, y: ev.value });
+    const zeroTerms = coef.some(c => Math.abs(c) < 1e-12);
+    const reduced = zeroTerms ? newtonFormulaStr(ux, coef.map(c => c), fmt) : null;
+
+    document.getElementById("nwOut").innerHTML = note +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 3 — Tabla de diferencias divididas (los círculos rojos son la primera fila de cada columna)</h3></div><div class="panel-body">' +
+        diagTable(T, ux, { cls: "circ", dec: Math.min(dec, 6) }) +
+        '<details class="code" open style="margin-top:16px"><summary>Ver cada división con sus números</summary><div class="panel-body"><ul class="steplist">' + divRows + '</ul></div></details>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Coeficientes: primera fila de cada columna</h3></div><div class="panel-body"><ul class="steplist">' + coefRows + '</ul></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Polinomio de Newton</h3></div><div class="panel-body">' +
+        '<div class="formula">P<sub>' + (m - 1) + '</sub>(x) = f[x<sub>0</sub>] + f[x<sub>0</sub>,x<sub>1</sub>](x − x<sub>0</sub>) + f[x<sub>0</sub>,x<sub>1</sub>,x<sub>2</sub>](x − x<sub>0</sub>)(x − x<sub>1</sub>) + ⋯</div>' +
+        '<div class="formula" style="margin-top:8px">P<sub>' + (m - 1) + '</sub>(x) = ' + newtonFormulaStr(ux, coef, fmt) + '</div>' +
+        (zeroTerms ? '<p class="tcap" style="margin-top:10px">Los términos con coeficiente 0 no aportan: el polinomio es de menor grado que el número de puntos sugiere.</p>' : "") +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Sustituir x = ' + trimNum(xEval, 4) + '</h3></div><div class="panel-body">' +
+        '<div class="formula">P<sub>' + (m - 1) + '</sub>(' + trimNum(xEval, 4) + ') = ' + newtonEvalStr(ux, coef, xEval, fmt) + '</div>' +
+        '<p class="tcap" style="margin:14px 0 6px">Aporte de cada término — así se ve que pasar de grado n a n+1 solo añade un término:</p>' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">k</th><th>f[x₀…x<sub>k</sub>]</th><th>Π(x − x<sub>j</sub>)</th><th>Aporte</th><th>P<sub>k</sub>(x) acumulado</th></tr></thead><tbody>' + aportes + '</tbody></table></div>' +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main"><div class="answer-lbl">Valor interpolado</div>' +
+          '<div class="answer-val" style="font-size:20px">P<sub>' + (m - 1) + '</sub>(' + trimNum(xEval, 4) + ') = ' + trimNum(ev.value, dec) + '</div></div>' +
+          '<dl class="answer-facts"><div><dt>Grado</dt><dd>' + (m - 1) + '</dd></div><div><dt>N.º de puntos</dt><dd>' + m + '</dd></div></dl></div>' +
+      '</div></div>' +
+      '<details class="code" open><summary>Paso 7 — Ver el desarrollo algebraico: de la forma de Newton a la forma estándar</summary><div class="panel-body">' +
+        '<p class="tcap" style="margin:0 0 6px">Cada término expandido:</p><ul class="steplist">' + devHtml + '</ul>' +
+        '<p class="tcap" style="margin:14px 0 6px">Suma acumulada:</p><ul class="steplist">' + sumHtml + '</ul>' +
+        '<p class="tcap" style="margin:14px 0 4px">Resultado — forma estándar:</p><div class="formula">P(x) = ' + polyToStr(std, fmt) + '</div>' +
+        '<p class="tcap" style="margin-top:10px">Comprobación: |P(x<sub>i</sub>) − f(x<sub>i</sub>)| máximo en los ' + m + ' nodos = ' + maxDev.toExponential(2) + (maxDev < 1e-8 ? " ✓ el polinomio pasa por todos los datos" : "") + '</p>' +
+      '</div></details>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Gráfica — puntos, curva P(x) y punto interpolado</h3></div><div class="panel-body">' +
+        '<div class="plotwrap">' + svg + '</div>' +
+        '<div class="plotlegend"><span><i style="background:var(--stop)"></i>Puntos de la tabla</span><span><i style="background:var(--accent);border-radius:2px;width:16px;height:3px"></i>P(x)</span><span><i style="background:var(--verde)"></i>Punto interpolado</span></div>' +
+      '</div></div>';
+  } catch(e){
+    document.getElementById("nwErr").textContent = e.message;
+    document.getElementById("nwOut").innerHTML = "";
+  }
+}
+document.getElementById("nwRun").addEventListener("click", nwRun);
+document.getElementById("nwCode").innerHTML = hl(NW_PY_CODE);
+
+/* ============================================================
+   NEWTON-GREGORY — PUNTOS EQUIESPACIADOS
+   ============================================================ */
+const GR_EJEMPLOS = [
+  { t: "Guía: h = 2, 7 puntos (−3 … 9) — forma normalizada", xs: [-3, -1, 1, 3, 5, 7, 9], ys: [39, 19, -21, -57, -65, -21, 99], ev: 2 },
+  { t: "Guía: h = 1, x = 0…4 — interpola f(2.5)", xs: [0, 1, 2, 3, 4], ys: [-1, -1, 1, 29, 131], ev: 2.5 },
+  { t: "Clase: velocidad (60,80,100), h = 20 — x = 90", xs: [60, 80, 100], ys: [9, 10, 10.5], ev: 90 }
+];
+(function(){
+  const sel = document.getElementById("grPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' + GR_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = GR_EJEMPLOS[Number(sel.value)];
+    ptsBuild("gr", e.xs.length, 2, 9, true);
+    ptsFill("gr", e.xs, e.ys);
+    document.getElementById("grEval").value = e.ev;
+  });
+  document.getElementById("grResize").addEventListener("click", () => ptsBuild("gr", Number(document.getElementById("grN").value) || 5, 2, 9, true));
+  const e0 = GR_EJEMPLOS[0];
+  ptsBuild("gr", e0.xs.length, 2, 9, true);
+  ptsFill("gr", e0.xs, e0.ys);
+  document.getElementById("grEval").value = e0.ev;
+})();
+
+const GR_PY_CODE = `import math
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+XS = [0, 1, 2, 3, 4]
+FS = [-1, -1, 1, 29, 131]
+X_EVAL = 2.5
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def newton_gregory(xs, fs, x):
+    n = len(xs)
+    h = xs[1] - xs[0]
+    assert all(abs((xs[i + 1] - xs[i]) - h) < 1e-9 for i in range(n - 1)), "puntos no equiespaciados"
+
+    dif = [fs[:]]                                  # diferencias finitas progresivas
+    for k in range(1, n):
+        dif.append([dif[-1][j + 1] - dif[-1][j] for j in range(n - k)])
+
+    a = [dif[i][0] / (math.factorial(i) * h ** i) for i in range(n)]   # a_i = delta^i f0 / (i! h^i)
+
+    suma, producto = 0.0, 1.0
+    for i in range(n):
+        suma += a[i] * producto
+        producto *= (x - xs[i])
+    return suma, a, dif
+
+valor, a, dif = newton_gregory(XS, FS, X_EVAL)
+print("a_i =", a)
+print(f"P({X_EVAL}) = {valor:.6f}")`;
+
+function grRun(){
+  document.getElementById("grErr").textContent = "";
+  try{
+    const { n, xs, ys } = ptsRead("gr", 2, 9, true);
+    const dec = readDec("grDec");
+    const xEval = readNum("grEval", "El valor de x a evaluar no es válido");
+    const h = xs[1] - xs[0];
+    for (let i = 0; i < n - 1; i++){
+      if (Math.abs((xs[i + 1] - xs[i]) - h) > 1e-9 * Math.max(1, Math.abs(h)))
+        throw new Error("Los puntos no están igualmente espaciados (x" + (i + 1) + " − x" + i + " ≠ h). Usa Newton con diferencias divididas.");
+    }
+    if (Math.abs(h) < 1e-12) throw new Error("h no puede ser cero");
+    const fmt = v => fracStr(v);
+    const { D, ops } = finiteDiffs(ys);
+    const fact = k => { let f = 1; for (let i = 2; i <= k; i++) f *= i; return f; };
+    const a = D.map((r, i) => r[0] / (fact(i) * Math.pow(h, i)));
+    const { std, termPolys } = expandNewtonLike(xs, a);
+    const ev = newtonEvalParts(xs, a, xEval);
+
+    let difRows = "";
+    for (let k = 1; k < n; k++){
+      for (let j = 0; j < n - k; j++){
+        const o = ops[k][j];
+        difRows += "<li>Δ<sup>" + k + "</sup>f<sub>" + j + "</sub> = " + (k === 1 ? "f<sub>" + (j + 1) + "</sub> − f<sub>" + j + "</sub>" : "Δ<sup>" + (k - 1) + "</sup>f<sub>" + (j + 1) + "</sub> − Δ<sup>" + (k - 1) + "</sup>f<sub>" + j + "</sub>") +
+          " = " + parN(o.a, 6) + " − " + parN(o.b, 6) + " = <b>" + trimNum(o.val, 6) + "</b></li>";
+      }
+    }
+    const coefRows = a.map((c, i) => "<li>a<sub>" + i + "</sub> = Δ<sup>" + i + "</sup>f<sub>0</sub> / (" + i + "!·h<sup>" + i + "</sup>) = " + parN(D[i][0], 6) + " / (" + fact(i) + "·" + trimNum(Math.pow(h, i), 6) + ") = <b>" + fracStr(c) + "</b>" + (fracStr(c).indexOf("/") >= 0 ? " (= " + trimNum(c, 6) + ")" : "") + "</li>").join("");
+    let aportes = "";
+    ev.parts.forEach(p => {
+      aportes += "<tr><td class=\"l\">" + p.k + "</td><td>" + fracStr(a[p.k]) + "</td><td>" + (p.k === 0 ? "1" : trimNum(p.prod, 6)) + "</td><td>" + trimNum(p.aporte, 6) + "</td><td>" + trimNum(p.acum, 6) + "</td></tr>";
+    });
+    let devHtml = "", running = new Array(n).fill(0), sumHtml = "";
+    termPolys.forEach(tp => {
+      if (Math.abs(a[tp.k]) < 1e-12) return;
+      const prodStr = tp.k === 0 ? "" : Array.from({ length: tp.k }, (_, j) => xFactor(xs[j])).join("");
+      devHtml += "<li>T<sub>" + tp.k + "</sub> = " + fmt(a[tp.k]) + (prodStr ? "·" + prodStr : "") + " &nbsp;→&nbsp; " + polyToStr(tp.poly, fmt) + "</li>";
+      running = running.map((v, i) => v + tp.poly[i]);
+      sumHtml += "<li>acumulado hasta T<sub>" + tp.k + "</sub> = " + polyToStr(running.slice(), fmt) + "</li>";
+    });
+    const nonzero = a.map((c, i) => Math.abs(c) > 1e-12 ? i : -1).filter(i => i >= 0);
+    const maxDev = Math.max.apply(null, xs.map((x, i) => Math.abs(polyEval(std, x) - ys[i])));
+    const xmin = Math.min.apply(null, xs), xmax = Math.max.apply(null, xs);
+    const svg = buildPlot(xs.map((x, i) => ({ x, y: ys[i] })), std, xmin, xmax, { x: xEval, y: ev.value });
+    const aShown = a.slice(0, nonzero.length ? nonzero[nonzero.length - 1] + 1 : 1);
+
+    document.getElementById("grOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 3 — Tabla de diferencias finitas progresivas (h = ' + trimNum(h, 6) + ')</h3></div><div class="panel-body">' +
+        '<p class="tcap" style="margin:0 0 10px">Δf<sub>i</sub> = f<sub>i+1</sub> − f<sub>i</sub> &nbsp;·&nbsp; Δ<sup>n+1</sup>f<sub>i</sub> = Δ<sup>n</sup>f<sub>i+1</sub> − Δ<sup>n</sup>f<sub>i</sub>. Los recuadros verdes son la primera fila de cada columna (Δ<sup>i</sup>f₀).</p>' +
+        diagTable(D, xs, { cls: "boxg", dec: Math.min(dec, 6), labels: k => k === 0 ? "Δ<sup>0</sup> = f(x<sub>i</sub>)" : "Δ<sup>" + k + "</sup>" }) +
+        '<details class="code" open style="margin-top:16px"><summary>Ver cada diferencia con sus números</summary><div class="panel-body"><ul class="steplist">' + difRows + '</ul></div></details>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Coeficientes a<sub>i</sub> = Δ<sup>i</sup>f₀ / (i!·h<sup>i</sup>)</h3></div><div class="panel-body"><ul class="steplist">' + coefRows + '</ul></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Polinomio progresivo de Newton-Gregory</h3></div><div class="panel-body">' +
+        '<div class="formula">P(x) = a<sub>0</sub> + a<sub>1</sub>(x − x<sub>0</sub>) + a<sub>2</sub>(x − x<sub>0</sub>)(x − x<sub>1</sub>) + ⋯ + a<sub>n</sub>(x − x<sub>0</sub>)⋯(x − x<sub>n−1</sub>)</div>' +
+        '<div class="formula" style="margin-top:8px">P(x) = ' + newtonFormulaStr(xs, aShown, fmt) + '</div>' +
+        (nonzero.length && nonzero[nonzero.length - 1] < n - 1 ? '<p class="tcap" style="margin-top:10px">Los coeficientes a<sub>' + (nonzero[nonzero.length - 1] + 1) + '</sub>…a<sub>' + (n - 1) + '</sub> valen 0: los datos pertenecen exactamente a un polinomio de grado ' + nonzero[nonzero.length - 1] + '.</p>' : "") +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Sustituir x = ' + trimNum(xEval, 4) + '</h3></div><div class="panel-body">' +
+        '<div class="formula">P(' + trimNum(xEval, 4) + ') = ' + newtonEvalStr(xs, aShown, xEval, fmt) + '</div>' +
+        '<p class="tcap" style="margin:14px 0 6px">Aporte de cada término:</p>' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">i</th><th>a<sub>i</sub></th><th>Π(x − x<sub>j</sub>)</th><th>Aporte</th><th>Acumulado</th></tr></thead><tbody>' + aportes + '</tbody></table></div>' +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main"><div class="answer-lbl">Valor interpolado</div>' +
+          '<div class="answer-val" style="font-size:20px">P(' + trimNum(xEval, 4) + ') = ' + trimNum(ev.value, dec) + '</div></div>' +
+          '<dl class="answer-facts"><div><dt>h</dt><dd>' + trimNum(h, 6) + '</dd></div><div><dt>N.º de puntos</dt><dd>' + n + '</dd></div></dl></div>' +
+      '</div></div>' +
+      '<details class="code" open><summary>Paso 7 — Ver el desarrollo algebraico: forma normalizada</summary><div class="panel-body">' +
+        '<p class="tcap" style="margin:0 0 6px">Cada término expandido:</p><ul class="steplist">' + devHtml + '</ul>' +
+        '<p class="tcap" style="margin:14px 0 6px">Suma acumulada:</p><ul class="steplist">' + sumHtml + '</ul>' +
+        '<p class="tcap" style="margin:14px 0 4px">Resultado — forma normalizada:</p><div class="formula">P(x) = ' + polyToStr(std, fmt) + '</div>' +
+        '<p class="tcap" style="margin-top:10px">Comprobación: |P(x<sub>i</sub>) − f(x<sub>i</sub>)| máximo en los ' + n + ' nodos = ' + maxDev.toExponential(2) + (maxDev < 1e-6 ? " ✓" : "") + '</p>' +
+      '</div></details>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Gráfica — puntos, curva P(x) y punto interpolado</h3></div><div class="panel-body">' +
+        '<div class="plotwrap">' + svg + '</div>' +
+        '<div class="plotlegend"><span><i style="background:var(--stop)"></i>Puntos de la tabla</span><span><i style="background:var(--accent);border-radius:2px;width:16px;height:3px"></i>P(x)</span><span><i style="background:var(--verde)"></i>Punto interpolado</span></div>' +
+      '</div></div>';
+  } catch(e){
+    document.getElementById("grErr").textContent = e.message;
+    document.getElementById("grOut").innerHTML = "";
+  }
+}
+document.getElementById("grRun").addEventListener("click", grRun);
+document.getElementById("grCode").innerHTML = hl(GR_PY_CODE);
+
+/* ============================================================
+   ERROR DE INTERPOLACIÓN — parser de f(x) + derivadas por series de Taylor
+   ============================================================ */
+function parseExpr(src){
+  let s = String(src).toLowerCase().replace(/\s+/g, "").replace(/,/g, ".").replace(/²/g, "^2").replace(/³/g, "^3").replace(/π/g, "pi").replace(/sen\(/g, "sin(");
+  if (!s) throw new Error("Escribe la función f(x)");
+  const toks = [];
+  const re = /(\d+\.?\d*(?:e[+-]?\d+)?|\.\d+)|([a-z]+)|([-+*/^()])/g;
+  let m, last = 0;
+  while ((m = re.exec(s)) !== null){
+    if (m.index !== last) throw new Error("Carácter no válido en f(x): «" + s.slice(last, m.index) + "»");
+    last = re.lastIndex;
+    if (m[1] !== undefined) toks.push({ t: "num", v: Number(m[1]) });
+    else if (m[2] !== undefined) toks.push({ t: "id", v: m[2] });
+    else toks.push({ t: "op", v: m[3] });
+  }
+  if (last !== s.length) throw new Error("Carácter no válido en f(x): «" + s.slice(last) + "»");
+  const FUNCS = ["sin", "cos", "tan", "exp", "ln", "log", "sqrt"];
+  let pos = 0;
+  const peek = () => toks[pos];
+  const isOp = v => toks[pos] && toks[pos].t === "op" && toks[pos].v === v;
+  function parseExprR(){
+    let a = parseTerm();
+    while (isOp("+") || isOp("-")){ const op = toks[pos++].v; a = { t: "bin", op, a, b: parseTerm() }; }
+    return a;
+  }
+  function startsPrimary(){
+    const k = peek();
+    return k && (k.t === "id" || (k.t === "op" && k.v === "("));
+  }
+  function parseTerm(){
+    let a = parseUnary();
+    for (;;){
+      if (isOp("*") || isOp("/")){ const op = toks[pos++].v; a = { t: "bin", op, a, b: parseUnary() }; }
+      else if (startsPrimary()) a = { t: "bin", op: "*", a, b: parseUnary() };
+      else break;
+    }
+    return a;
+  }
+  function parseUnary(){
+    if (isOp("-")){ pos++; return { t: "neg", a: parseUnary() }; }
+    if (isOp("+")){ pos++; return parseUnary(); }
+    return parsePower();
+  }
+  function parsePower(){
+    const base = parsePrimary();
+    if (isOp("^")){ pos++; return { t: "bin", op: "^", a: base, b: parseUnary() }; }
+    return base;
+  }
+  function parsePrimary(){
+    const k = toks[pos++];
+    if (!k) throw new Error("La expresión f(x) está incompleta");
+    if (k.t === "num") return { t: "num", v: k.v };
+    if (k.t === "id"){
+      if (k.v === "x") return { t: "x" };
+      if (k.v === "pi") return { t: "num", v: Math.PI };
+      if (k.v === "e") return { t: "num", v: Math.E };
+      if (FUNCS.indexOf(k.v) >= 0){
+        if (!isOp("(")) throw new Error("Escribe " + k.v + " con paréntesis: " + k.v + "(…)");
+        pos++;
+        const arg = parseExprR();
+        if (!isOp(")")) throw new Error("Falta cerrar un paréntesis");
+        pos++;
+        return { t: "fn", name: k.v, a: arg };
+      }
+      throw new Error("«" + k.v + "» no es una función ni constante conocida");
+    }
+    if (k.t === "op" && k.v === "("){
+      const a = parseExprR();
+      if (!isOp(")")) throw new Error("Falta cerrar un paréntesis");
+      pos++;
+      return a;
+    }
+    throw new Error("Símbolo inesperado «" + k.v + "» en f(x)");
+  }
+  const ast = parseExprR();
+  if (pos < toks.length) throw new Error("Sobra «" + toks[pos].v + "» en f(x)");
+  return ast;
+}
+function hasX(ast){
+  if (ast.t === "x") return true;
+  if (ast.t === "num") return false;
+  if (ast.t === "neg" || ast.t === "fn") return hasX(ast.a);
+  return hasX(ast.a) || hasX(ast.b);
+}
+/* series de Taylor truncadas a orden m: s[k] = f^(k)(t) / k! */
+const SR = {
+  cst(c, m){ const s = new Array(m + 1).fill(0); s[0] = c; return s; },
+  add(a, b){ return a.map((v, i) => v + b[i]); },
+  sub(a, b){ return a.map((v, i) => v - b[i]); },
+  neg(a){ return a.map(v => -v); },
+  mul(a, b){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    for (let i = 0; i <= m; i++) for (let j = 0; j <= m - i; j++) c[i + j] += a[i] * b[j];
+    return c;
+  },
+  div(a, b){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    for (let k = 0; k <= m; k++){
+      let s = a[k];
+      for (let j = 1; j <= k; j++) s -= b[j] * c[k - j];
+      c[k] = s / b[0];
+    }
+    return c;
+  },
+  exp(a){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    c[0] = Math.exp(a[0]);
+    for (let k = 1; k <= m; k++){
+      let s = 0;
+      for (let j = 1; j <= k; j++) s += j * a[j] * c[k - j];
+      c[k] = s / k;
+    }
+    return c;
+  },
+  ln(a){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    c[0] = Math.log(a[0]);
+    for (let k = 1; k <= m; k++){
+      let s = 0;
+      for (let j = 1; j <= k - 1; j++) s += j * c[j] * a[k - j];
+      c[k] = (a[k] - s / k) / a[0];
+    }
+    return c;
+  },
+  sincos(a){
+    const m = a.length - 1, s = new Array(m + 1).fill(0), c = new Array(m + 1).fill(0);
+    s[0] = Math.sin(a[0]); c[0] = Math.cos(a[0]);
+    for (let k = 1; k <= m; k++){
+      let ss = 0, cc = 0;
+      for (let j = 1; j <= k; j++){ ss += j * a[j] * c[k - j]; cc += j * a[j] * s[k - j]; }
+      s[k] = ss / k; c[k] = -cc / k;
+    }
+    return { s, c };
+  },
+  pow(a, p){
+    const m = a.length - 1;
+    if (a[0] === 0){
+      if (Number.isInteger(p) && p >= 0){
+        let r = SR.cst(1, m);
+        for (let i = 0; i < p; i++) r = SR.mul(r, a);
+        return r;
+      }
+      return new Array(m + 1).fill(NaN);
+    }
+    const c = new Array(m + 1).fill(0);
+    c[0] = Math.pow(a[0], p);
+    for (let k = 1; k <= m; k++){
+      let s = 0;
+      for (let j = 1; j <= k; j++) s += (p * j - (k - j)) * a[j] * c[k - j];
+      c[k] = s / (k * a[0]);
+    }
+    return c;
+  }
+};
+function evalS(ast, t, m){
+  switch (ast.t){
+    case "num": return SR.cst(ast.v, m);
+    case "x": { const s = SR.cst(t, m); if (m >= 1) s[1] = 1; return s; }
+    case "neg": return SR.neg(evalS(ast.a, t, m));
+    case "bin": {
+      if (ast.op === "^"){
+        const A = evalS(ast.a, t, m);
+        if (!hasX(ast.b)) return SR.pow(A, evalS(ast.b, t, 0)[0]);
+        return SR.exp(SR.mul(evalS(ast.b, t, m), SR.ln(A)));
+      }
+      const A = evalS(ast.a, t, m), B = evalS(ast.b, t, m);
+      if (ast.op === "+") return SR.add(A, B);
+      if (ast.op === "-") return SR.sub(A, B);
+      if (ast.op === "*") return SR.mul(A, B);
+      return SR.div(A, B);
+    }
+    case "fn": {
+      const A = evalS(ast.a, t, m);
+      if (ast.name === "exp") return SR.exp(A);
+      if (ast.name === "ln") return SR.ln(A);
+      if (ast.name === "log"){ const L = SR.ln(A), k = 1 / Math.LN10; return L.map(v => v * k); }
+      if (ast.name === "sqrt") return SR.pow(A, 0.5);
+      const sc = SR.sincos(A);
+      if (ast.name === "sin") return sc.s;
+      if (ast.name === "cos") return sc.c;
+      return SR.div(sc.s, sc.c);
+    }
+  }
+  return SR.cst(NaN, m);
+}
+const factN = k => { let f = 1; for (let i = 2; i <= k; i++) f *= i; return f; };
+
+const EI_EJEMPLOS = [
+  { t: "Guía: f = (3+x)/(1+x), nodos 0.1, 0.2, 0.4 — x = 0.25", fn: "(3+x)/(1+x)", xs: [0.1, 0.2, 0.4], ev: 0.25 },
+  { t: "Guía: f = e^x − x² + 1, nodos 0.5, 1, 1.5 — x = 1.2", fn: "exp(x) - x^2 + 1", xs: [0.5, 1, 1.5], ev: 1.2 },
+  { t: "Guía: f = e^x + sen x, nodos 0, 0.5, 1 — x = 0.7", fn: "exp(x) + sin(x)", xs: [0, 0.5, 1], ev: 0.7 }
+];
+(function(){
+  const sel = document.getElementById("eiPreset");
+  sel.innerHTML = '<option value="">— elegir —</option>' + EI_EJEMPLOS.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  sel.addEventListener("change", () => {
+    if (sel.value === "") return;
+    const e = EI_EJEMPLOS[Number(sel.value)];
+    document.getElementById("eiFn").value = e.fn;
+    ptsBuild("ei", e.xs.length, 2, 6, false);
+    ptsFill("ei", e.xs, null);
+    document.getElementById("eiEval").value = e.ev;
+  });
+  document.getElementById("eiResize").addEventListener("click", () => ptsBuild("ei", Number(document.getElementById("eiN").value) || 3, 2, 6, false));
+  const e0 = EI_EJEMPLOS[0];
+  document.getElementById("eiFn").value = e0.fn;
+  ptsBuild("ei", e0.xs.length, 2, 6, false);
+  ptsFill("ei", e0.xs, null);
+  document.getElementById("eiEval").value = e0.ev;
+})();
+
+const EI_PY_CODE = `import math
+import sympy as sp          # pip install sympy  (solo para derivar f simbolicamente)
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+x = sp.symbols('x')
+F_SIMB = (3 + x) / (1 + x)
+XS = [0.1, 0.2, 0.4]
+X_EVAL = 0.25
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+f = sp.lambdify(x, F_SIMB, "math")
+fs = [f(xi) for xi in XS]
+n = len(XS) - 1
+
+# polinomio de Newton (diferencias divididas) para estimar f(X_EVAL)
+tabla = [fs[:]]
+for k in range(1, n + 1):
+    tabla.append([(tabla[-1][j + 1] - tabla[-1][j]) / (XS[j + k] - XS[j]) for j in range(n + 1 - k)])
+P, prod = 0.0, 1.0
+for k in range(n + 1):
+    P += tabla[k][0] * prod
+    prod *= (X_EVAL - XS[k])
+
+# cota: |E| <= prod|x - xi| / (n+1)! * max |f^(n+1)(t)|
+d = sp.lambdify(x, sp.diff(F_SIMB, x, n + 1), "math")
+a, b = min(XS + [X_EVAL]), max(XS + [X_EVAL])
+fmax = max(abs(d(a + (b - a) * i / 4000)) for i in range(4001))
+prod_abs = math.prod(abs(X_EVAL - xi) for xi in XS)
+cota = prod_abs / math.factorial(n + 1) * fmax
+
+print(f"P({X_EVAL}) = {P:.6f}   f({X_EVAL}) = {f(X_EVAL):.6f}   |E real| = {abs(f(X_EVAL) - P):.6f}")
+print(f"max|f^({n+1})| = {fmax:.4f}   cota |E| <= {cota:.6f}")`;
+
+function eiRun(){
+  document.getElementById("eiErr").textContent = "";
+  try{
+    const ast = parseExpr(document.getElementById("eiFn").value);
+    const { n: nn, xs } = ptsRead("ei", 2, 6, false);
+    const dec = readDec("eiDec");
+    const xEval = readNum("eiEval", "El valor de x a interpolar no es válido");
+    const F = t => evalS(ast, t, 0)[0];
+    const fs = xs.map(F);
+    fs.forEach((v, i) => { if (!isFinite(v)) throw new Error("f(x) no está definida en x" + i + " = " + trimNum(xs[i], 6)); });
+    const fx = F(xEval);
+    if (!isFinite(fx)) throw new Error("f(x) no está definida en x = " + trimNum(xEval, 6));
+    const fmt = v => trimNum(v, dec);
+    const { T } = divDiffs(xs, fs);
+    const coef = T.map(r => r[0]);
+    const { std } = expandNewtonLike(xs, coef);
+    const ev = newtonEvalParts(xs, coef, xEval);
+    const P = ev.value, Ereal = fx - P;
+    const n = nn - 1, mDer = n + 1;
+    const lo = Math.min.apply(null, xs.concat([xEval])), hi = Math.max.apply(null, xs.concat([xEval]));
+    let maxD = 0, tStar = lo, okAny = false;
+    const NS = 4000;
+    for (let i = 0; i <= NS; i++){
+      const t = lo + (hi - lo) * i / NS;
+      const s = evalS(ast, t, mDer);
+      const dv = Math.abs(s[mDer]) * factN(mDer);
+      if (isFinite(dv)){ okAny = true; if (dv > maxD){ maxD = dv; tStar = t; } }
+    }
+    if (!okAny) throw new Error("No se pudo calcular la derivada de orden " + mDer + " de f(x) en [" + trimNum(lo, 4) + ", " + trimNum(hi, 4) + "]");
+    const prodAbs = xs.reduce((p, xi) => p * Math.abs(xEval - xi), 1);
+    const bound = prodAbs / factN(mDer) * maxD;
+    const prodStr = xs.map(xi => "|" + trimNum(xEval, 4) + " − " + parN(xi, 4) + "|").join("·");
+    const digits = bound > 0 && bound < 1 ? Math.floor(-Math.log10(bound) + 1e-12) : 0;
+    const svg = buildPlot(xs.map((x, i) => ({ x, y: fs[i] })), std, Math.min.apply(null, xs), Math.max.apply(null, xs), { x: xEval, y: P }, F);
+    const nodeRows = xs.map((x, i) => "<tr><td class=\"l\">x<sub>" + i + "</sub></td><td>" + trimNum(x, 6) + "</td><td>" + trimNum(fs[i], 6) + "</td></tr>").join("");
+
+    document.getElementById("eiOut").innerHTML =
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 3 — Valores de f(x) en los nodos</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">Nodo</th><th>x<sub>i</sub></th><th>f(x<sub>i</sub>)</th></tr></thead><tbody>' + nodeRows + '</tbody></table></div>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Polinomio interpolador P<sub>' + n + '</sub>(x) (Newton) y su valor en x = ' + trimNum(xEval, 4) + '</h3></div><div class="panel-body">' +
+        '<div class="formula">P<sub>' + n + '</sub>(x) = ' + newtonFormulaStr(xs, coef, fmt) + '</div>' +
+        '<div class="formula" style="margin-top:8px">P<sub>' + n + '</sub>(x) = ' + polyToStr(std, fmt) + '</div>' +
+        '<ul class="steplist" style="margin-top:12px"><li>P<sub>' + n + '</sub>(' + trimNum(xEval, 4) + ') = <b>' + trimNum(P, dec) + '</b></li><li>f(' + trimNum(xEval, 4) + ') = <b>' + trimNum(fx, dec) + '</b> (valor exacto de la función)</li><li>Error real: |f(x) − P(x)| = |' + trimNum(fx, 6) + ' − ' + trimNum(P, 6) + '| = <b>' + trimNum(Math.abs(Ereal), 8) + '</b></li></ul>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Cota superior del error de truncamiento</h3></div><div class="panel-body">' +
+        '<div class="formula">|E<sub>' + n + '</sub>(x)| ≤ Π|x − x<sub>i</sub>| / (n+1)! · máx |f<sup>(' + mDer + ')</sup>(t)| &nbsp;&nbsp; t ∈ [' + trimNum(lo, 4) + ', ' + trimNum(hi, 4) + ']</div>' +
+        '<ul class="steplist" style="margin-top:12px">' +
+          '<li>Π|x − x<sub>i</sub>| = ' + prodStr + ' = <b>' + trimNum(prodAbs, 8) + '</b></li>' +
+          '<li>(n+1)! = ' + mDer + '! = <b>' + factN(mDer) + '</b></li>' +
+          '<li>máx |f<sup>(' + mDer + ')</sup>(t)| en el intervalo ≈ <b>' + trimNum(maxD, 6) + '</b> (se alcanza en t ≈ ' + trimNum(tStar, 4) + '; calculado con 4001 puntos y derivadas exactas por series de Taylor)</li>' +
+          '<li>Cota = ' + trimNum(prodAbs, 8) + ' / ' + factN(mDer) + ' · ' + trimNum(maxD, 6) + ' = <b>' + bound.toExponential(4) + '</b> (' + trimNum(bound, 8) + ')</li>' +
+        '</ul>' +
+        '<div class="answer" style="margin-top:16px"><div class="answer-main"><div class="answer-lbl">Cota del error</div>' +
+          '<div class="answer-val" style="font-size:20px">|E<sub>' + n + '</sub>| ≤ ' + trimNum(bound, 6) + '</div></div>' +
+          '<dl class="answer-facts"><div><dt>Error real</dt><dd>' + trimNum(Math.abs(Ereal), 6) + '</dd></div><div><dt>¿Real ≤ cota?</dt><dd>' + (Math.abs(Ereal) <= bound * (1 + 1e-9) + 1e-15 ? "Sí ✓" : "No ✗") + '</dd></div><div><dt>Cifras decimales correctas</dt><dd>' + digits + '</dd></div></dl></div>' +
+        '<div class="note ok"><b>Lectura</b>' + (bound < 1 ? 'El número de ceros después del punto decimal en la cota da las cifras correctas de la aproximación: ' + digits + ' ' + (digits === 1 ? 'cifra decimal correcta' : 'cifras decimales correctas') + '.' : 'La cota es mayor que 1: la aproximación no garantiza ninguna cifra decimal correcta.') + '</div>' +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Gráfica — f(x) (punteada), P(x) y punto interpolado</h3></div><div class="panel-body">' +
+        '<div class="plotwrap">' + svg + '</div>' +
+        '<div class="plotlegend"><span><i style="background:var(--stop)"></i>Nodos (x<sub>i</sub>, f(x<sub>i</sub>))</span><span><i style="background:var(--ink-3);border-radius:2px;width:16px;height:3px"></i>f(x) real</span><span><i style="background:var(--accent);border-radius:2px;width:16px;height:3px"></i>P(x)</span><span><i style="background:var(--verde)"></i>(x, P(x))</span></div>' +
+      '</div></div>';
+  } catch(e){
+    document.getElementById("eiErr").textContent = e.message;
+    document.getElementById("eiOut").innerHTML = "";
+  }
+}
+document.getElementById("eiRun").addEventListener("click", eiRun);
+document.getElementById("eiCode").innerHTML = hl(EI_PY_CODE);
 
 /* ---- tema ---- */
 const root = document.documentElement;
