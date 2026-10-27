@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Integración numérica</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap">
+
+<style>
+/* ============================================================
+   TOKENS — light is the base; dark redefines only the values
+   ============================================================ */
+:root{
+  color-scheme: light;
+  --ground:      #E7EBE6;
+  --ground-line: #DADFD9;
+  --panel:       #FAFBF9;
+  --panel-alt:   #F0F3EF;
+  --panel-sunk:  #E9EDE8;
+
+  --ink:    #131917;
+  --ink-2:  #4C5754;
+  --ink-3:  #7B8683;
+  --ink-4:  #9BA5A1;
+
+  --rule:        #D3D9D3;
+  --rule-strong: #B7C0B8;
+
+  --accent:      #2E6FC4;
+  --accent-ink:  #24589E;
+  --accent-wash: rgba(46,111,196,.10);
+  --accent-edge: rgba(46,111,196,.30);
+
+  --verde:      #0E8C7E;
+  --verde-wash: rgba(14,140,126,.12);
+
+  --ok:     #0F7A46;
+  --warn:   #9C6A15;
+  --stop:   #B23A3A;
+
+  --shadow: 0 1px 2px rgba(19,25,23,.05), 0 8px 24px -16px rgba(19,25,23,.18);
+
+  --sans:  "Archivo", "Segoe UI", system-ui, sans-serif;
+  --serif: "Newsreader", Georgia, "Times New Roman", serif;
+  --mono:  "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme: dark;
+    --ground:      #0E1416;
+    --ground-line: #161E20;
+    --panel:       #171F21;
+    --panel-alt:   #1D2729;
+    --panel-sunk:  #121A1C;
+
+    --ink:    #E8EDEA;
+    --ink-2:  #9FADA9;
+    --ink-3:  #74827E;
+    --ink-4:  #5C6A66;
+
+    --rule:        #253032;
+    --rule-strong: #354245;
+
+    --accent:      #5C97E8;
+    --accent-ink:  #7EAEEF;
+    --accent-wash: rgba(92,151,232,.14);
+    --accent-edge: rgba(92,151,232,.36);
+
+    --verde:      #24A896;
+    --verde-wash: rgba(36,168,150,.14);
+
+    --ok:     #3FB273;
+    --warn:   #D2A03E;
+    --stop:   #E06B6B;
+
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme: dark;
+  --ground:      #0E1416;
+  --ground-line: #161E20;
+  --panel:       #171F21;
+  --panel-alt:   #1D2729;
+  --panel-sunk:  #121A1C;
+
+  --ink:    #E8EDEA;
+  --ink-2:  #9FADA9;
+  --ink-3:  #74827E;
+  --ink-4:  #5C6A66;
+
+  --rule:        #253032;
+  --rule-strong: #354245;
+
+  --accent:      #5C97E8;
+  --accent-ink:  #7EAEEF;
+  --accent-wash: rgba(92,151,232,.14);
+  --accent-edge: rgba(92,151,232,.36);
+
+  --verde:      #24A896;
+  --verde-wash: rgba(36,168,150,.14);
+
+  --ok:     #3FB273;
+  --warn:   #D2A03E;
+  --stop:   #E06B6B;
+
+  --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px -18px rgba(0,0,0,.8);
+}
+
+/* ============================================================
+   BASE
+   ============================================================ */
+*, *::before, *::after{ box-sizing: border-box; }
+body{
+  margin: 0;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+:focus-visible{ outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}
+.m{ font-family: var(--mono); font-size: .94em; color: var(--ink); }
+
+/* ============================================================
+   SHELL — rail lateral + escenario
+   ============================================================ */
+.shell{ display: grid; grid-template-columns: 236px minmax(0, 1fr); min-height: 100vh; }
+.view, .view > *{ min-width: 0; }
+
+.rail{
+  position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+  background: var(--panel-sunk); border-right: 1px solid var(--rule);
+  padding: 24px 0 28px; display: flex; flex-direction: column; gap: 24px;
+}
+.brand{ padding: 0 20px; }
+.brand h1{ margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.02em; line-height: 1.15; }
+.brand-mark{ display: inline-block; width: 18px; border-top: 2px solid var(--accent); margin-bottom: 9px; }
+.brand-sub{
+  margin-top: 4px; font-family: var(--mono); font-size: 10px; font-weight: 500;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3);
+}
+.navgroup{ display: flex; flex-direction: column; gap: 2px; }
+.navgroup > h2{
+  margin: 0 0 6px; padding: 0 20px; font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--ink-4);
+}
+.navlink{
+  display: grid; grid-template-columns: 20px 1fr; align-items: center; gap: 9px;
+  width: 100%; padding: 8px 20px 8px 16px; border: 0; border-left: 3px solid transparent;
+  background: transparent; color: var(--ink-3); font-family: var(--sans); font-size: 13px; font-weight: 500;
+  text-align: left; cursor: pointer; transition: color .14s, background-color .14s, border-color .14s;
+}
+.navlink .glyph{ font-family: var(--mono); font-size: 11px; text-align: center; color: var(--ink-4); transition: color .14s; }
+.navlink:hover{ color: var(--ink); background: var(--panel-alt); }
+.navlink:hover .glyph{ color: var(--ink-2); }
+.navlink[aria-current="page"]{ color: var(--ink); font-weight: 600; background: var(--panel); border-left-color: var(--accent); }
+.navlink[aria-current="page"] .glyph{ color: var(--accent); }
+.railfoot{ margin-top: auto; padding: 0 20px; font-family: var(--mono); font-size: 9.5px; line-height: 1.7; color: var(--ink-4); }
+
+.stage{ min-width: 0; max-width: 980px; padding: 36px 28px 96px; }
+.view{ display: none; }
+.view.is-active{ display: block; }
+
+@media (max-width: 820px){
+  .shell{ grid-template-columns: minmax(0,1fr); }
+  .rail{ position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--rule); padding-bottom: 18px; }
+  .stage{ padding: 26px 18px 72px; }
+}
+
+.eyebrow{
+  font-family: var(--mono); font-size: 10px; font-weight: 600;
+  letter-spacing: .17em; text-transform: uppercase; color: var(--ink-3);
+  margin: 0 0 10px;
+}
+.view > header h2{
+  margin: 0; font-size: clamp(26px, 3.4vw, 36px); font-weight: 700;
+  letter-spacing: -.03em; line-height: 1.08; text-wrap: balance;
+}
+.lede{
+  font-family: var(--serif); font-size: 17px; line-height: 1.6;
+  color: var(--ink-2); max-width: 66ch; margin: 14px 0 32px;
+}
+.prose{ font-family: var(--serif); font-size: 15.5px; line-height: 1.65; color: var(--ink-2); max-width: 68ch; }
+h3.sec{ margin: 0 0 4px; font-size: 15px; font-weight: 600; }
+h4.sec{ margin: 0 0 4px; font-size: 14.5px; font-weight: 600; }
+.sec-note{ margin: 0; font-size: 13px; color: var(--ink-3); max-width: 68ch; }
+.tcap{ margin: 10px 2px 0; font-size: 12px; line-height: 1.55; color: var(--ink-3); max-width: 78ch; }
+
+/* ============================================================
+   PANELS
+   ============================================================ */
+.panel{ background: var(--panel); border: 1px solid var(--rule); border-radius: 4px; box-shadow: var(--shadow); }
+.panel + .panel{ margin-top: 22px; }
+.panel-head{
+  padding: 16px 20px; border-bottom: 1px solid var(--rule);
+  display: flex; align-items: baseline; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+}
+.panel-body{ padding: 20px; }
+
+.formula{
+  background: var(--panel-sunk); border: 1px solid var(--rule); border-radius: 3px;
+  padding: 14px 16px; font-family: var(--mono); font-size: 13.5px; line-height: 1.9; overflow-x: auto;
+}
+.note{
+  margin-top: 16px; padding: 12px 15px; border: 1px solid var(--rule);
+  border-left: 3px solid var(--n-color, var(--rule-strong)); border-radius: 3px;
+  background: var(--panel-alt); font-size: 13px; line-height: 1.6; color: var(--ink-2);
+}
+.note b{ display: block; font-family: var(--mono); font-size: 9.5px; font-weight: 600;
+  letter-spacing: .13em; text-transform: uppercase; color: var(--n-color, var(--ink-3)); margin-bottom: 4px; }
+.note.ok{ --n-color: var(--verde); }
+.note.warn{ --n-color: var(--warn); }
+
+.answer{
+  margin-top: 16px; border: 1px solid var(--accent-edge); border-radius: 3px; background: var(--accent-wash);
+  display: grid; grid-template-columns: minmax(180px, auto) 1fr;
+}
+@media (max-width: 640px){ .answer{ grid-template-columns: minmax(0,1fr); } }
+.answer-main{ padding: 16px 18px; border-right: 1px solid var(--accent-edge); }
+@media (max-width: 640px){ .answer-main{ border-right: 0; border-bottom: 1px solid var(--accent-edge); } }
+.answer-lbl{ font-family: var(--mono); font-size: 9.5px; font-weight: 600; letter-spacing: .14em;
+  text-transform: uppercase; color: var(--accent-ink); margin-bottom: 5px; }
+.answer-val{ font-family: var(--mono); font-weight: 600; letter-spacing: -.01em; color: var(--ink); line-height: 1.3; }
+.answer-facts{ padding: 14px 18px; display: grid; grid-template-columns: repeat(auto-fit, minmax(90px,1fr));
+  gap: 10px 16px; align-content: center; }
+.answer-facts dt{ font-family: var(--mono); font-size: 9px; font-weight: 500; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 2px; }
+.answer-facts dd{ margin: 0; font-family: var(--mono); font-size: 12.5px; font-variant-numeric: tabular-nums; color: var(--ink); }
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.tablewrap{ overflow-x: auto; max-width: 100%; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel); }
+table.data{ width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12.5px;
+  font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.data thead th{ position: sticky; top: 0; background: var(--panel-alt); color: var(--ink-2);
+  font-weight: 600; font-size: 11px; letter-spacing: .04em; text-align: right; padding: 9px 14px;
+  border-bottom: 1px solid var(--rule-strong); }
+table.data thead th.l, table.data tbody td.l{ text-align: left; white-space: normal; }
+table.data tbody td{ padding: 8px 14px; text-align: right; border-bottom: 1px solid var(--rule); color: var(--ink); }
+table.data tbody tr:last-child td{ border-bottom: 0; }
+table.data tbody tr:hover td{ background: var(--panel-alt); }
+table.data tbody tr.hit td{ background: var(--accent-wash); font-weight: 500; }
+table.data tbody tr.hit td:first-child{ box-shadow: inset 3px 0 0 var(--accent); color: var(--accent-ink); font-weight: 600; }
+
+/* ============================================================
+   STEPPER
+   ============================================================ */
+.stepper{ list-style: none; margin: 22px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
+.step{ display: grid; grid-template-columns: 40px minmax(0,1fr); gap: 18px; align-items: start; position: relative; }
+.step:not(:last-child)::before{ content: ""; position: absolute; left: 19px; top: 44px; bottom: -22px;
+  width: 1px; background: var(--rule-strong); }
+.step-mark{ width: 40px; height: 40px; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid var(--accent-edge); background: var(--panel); color: var(--accent-ink);
+  font-family: var(--mono); font-size: 15px; font-weight: 600; position: relative; z-index: 1; }
+.step.done .step-mark{ background: var(--accent); border-color: var(--accent); color: #fff; }
+.step > .panel{ margin-top: 0; }
+.step-next{ display: flex; justify-content: flex-end; margin-top: 16px; }
+@media (max-width: 560px){
+  .step{ grid-template-columns: 30px minmax(0,1fr); gap: 12px; }
+  .step-mark{ width: 30px; height: 30px; font-size: 12px; }
+  .step:not(:last-child)::before{ left: 14px; top: 34px; }
+}
+
+/* ============================================================
+   MATRICES
+   ============================================================ */
+.matbuild{ overflow-x: auto; max-width: 100%; padding-bottom: 4px; }
+table.matgrid{ border-collapse: separate; border-spacing: 4px; font-family: var(--mono); font-variant-numeric: tabular-nums; }
+table.matgrid input{
+  width: 62px; padding: 7px 4px; text-align: center; border: 1px solid var(--rule-strong);
+  border-radius: 3px; background: var(--panel-sunk); color: var(--ink); font-family: var(--mono); font-size: 13px;
+}
+table.matgrid input:focus{ border-color: var(--accent); outline: none; }
+table.matgrid td.bcell input{ background: var(--accent-wash); border-color: var(--accent-edge); }
+table.matgrid td.bcell{ border-left: 2px solid var(--rule-strong); padding-left: 10px; }
+table.matgrid th{ font-family: var(--mono); font-size: 10px; font-weight: 500; color: var(--ink-4); padding-bottom: 2px; }
+table.matgrid th.bhead{ padding-left: 14px; }
+.mrowlbl{ font-family: var(--mono); font-size: 12px; color: var(--ink-3); padding-right: 6px; white-space: nowrap; }
+
+.matdisp-wrap{ overflow-x: auto; max-width: 100%; }
+.matdisp{ display: inline-grid; gap: 2px; padding: 10px; background: var(--panel-sunk);
+  border: 1px solid var(--rule); border-radius: 3px; }
+.matdisp .mcell{ min-width: 54px; padding: 5px 8px; text-align: right; font-family: var(--mono);
+  font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink); background: var(--panel); border-radius: 2px; }
+.matdisp .mcell.diag{ background: var(--accent-wash); color: var(--accent-ink); font-weight: 600; }
+.matdisp .mcell.zero{ color: var(--ink-4); }
+.matpair{ display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+.matpair > div{ display: flex; flex-direction: column; gap: 8px; }
+.matpair .mlbl{ font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--ink-4); }
+
+.reuse-panel{ border: 1px solid var(--accent-edge); border-left: 3px solid var(--accent); border-radius: 3px;
+  background: var(--accent-wash); padding: 18px 20px; margin-top: 22px; }
+.reuse-panel h4{ margin: 0 0 4px; font-size: 16px; font-weight: 700; color: var(--ink); }
+.reuse-panel .sub{ margin: 0 0 14px; font-size: 13.5px; color: var(--ink-2); }
+.bvec-row{ display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.bvec-row input{ width: 74px; padding: 8px 6px; text-align: center; font-family: var(--mono); font-size: 13px;
+  border: 1px solid var(--rule-strong); border-radius: 3px; background: var(--panel); color: var(--ink); }
+.bvec-row input:focus{ border-color: var(--accent); outline: none; }
+.locked-badge{ display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10.5px;
+  font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--verde); background: var(--verde-wash);
+  border: 1px solid var(--verde); border-radius: 3px; padding: 3px 9px; margin-bottom: 12px; }
+
+/* ============================================================
+   CONTROLS / BUTTONS
+   ============================================================ */
+.controls{ display: grid; grid-template-columns: repeat(auto-fit, minmax(158px, 1fr)); gap: 14px 16px; align-items: end; }
+.field{ display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.field label{ font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: .03em; color: var(--ink-3); }
+.field input, .field select{ font-family: var(--mono); font-size: 13px; padding: 8px 10px; border: 1px solid var(--rule-strong);
+  border-radius: 3px; background: var(--panel-sunk); color: var(--ink); min-width: 0; width: 100%; }
+.field input:focus, .field select:focus{ border-color: var(--accent); }
+
+.btn{ font-family: var(--sans); font-size: 13px; font-weight: 600; padding: 9px 20px; border: 1px solid var(--accent);
+  border-radius: 3px; background: var(--accent); color: #fff; cursor: pointer; transition: filter .14s; white-space: nowrap; }
+.btn:hover{ filter: brightness(1.08); }
+.btn.ghost{ background: transparent; color: var(--ink-2); border-color: var(--rule-strong); font-weight: 500; }
+.btn.ghost:hover{ color: var(--ink); border-color: var(--ink-3); filter: none; }
+.btn.sm{ font-size: 11.5px; padding: 6px 13px; }
+.rowend{ display: flex; justify-content: flex-end; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+
+.errbox{ margin-top: 14px; padding: 11px 14px; border: 1px solid var(--stop); border-radius: 3px;
+  background: var(--panel-alt); font-family: var(--mono); font-size: 12.5px; color: var(--stop); }
+.errbox:empty{ display: none; }
+
+/* ============================================================
+   CODE
+   ============================================================ */
+details.code{ margin-top: 22px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel-sunk); }
+details.code > summary{ cursor: pointer; padding: 11px 16px; font-family: var(--mono); font-size: 11px; font-weight: 600;
+  letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); list-style: none; display: flex; align-items: center; gap: 9px; }
+details.code > summary::-webkit-details-marker{ display: none; }
+details.code > summary::before{ content: "+"; font-size: 13px; color: var(--accent); width: 10px; }
+details.code[open] > summary::before{ content: "\2212"; }
+details.code[open] > summary{ border-bottom: 1px solid var(--rule); }
+details.code > summary:hover{ color: var(--ink); }
+pre.py{ margin: 0; padding: 16px 18px; overflow-x: auto; font-family: var(--mono); font-size: 12px;
+  line-height: 1.65; color: var(--ink-2); tab-size: 4; }
+pre.py .kw{ color: var(--accent-ink); }
+pre.py .fn{ color: #7A5BC4; }
+pre.py .st{ color: var(--verde); }
+pre.py .cm{ color: var(--ink-4); font-style: italic; }
+pre.py .nu{ color: #B0840F; }
+
+.foot{ margin-top: 40px; font-family: var(--mono); font-size: 11px; color: var(--ink-4); line-height: 1.7; }
+
+/* ============================================================
+   INTERPOLACIÓN — pasos de sustitución y gráfica
+   ============================================================ */
+.steplist{ list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.steplist li{ padding: 10px 13px; border: 1px solid var(--rule); border-radius: 3px; background: var(--panel-sunk);
+  font-family: var(--mono); font-size: 12.5px; line-height: 1.7; color: var(--ink-2); overflow-x: auto; }
+.steplist li b{ color: var(--ink); }
+table.tdd tbody td{ padding: 4px 16px; }
+table.tdd tbody tr:hover td{ background: transparent; }
+.circ{ display: inline-block; padding: 1px 9px; border: 2px solid var(--stop); border-radius: 999px; }
+.boxg{ display: inline-block; padding: 1px 8px; border: 2px solid var(--verde); border-radius: 4px; }
+.plotwrap{ overflow-x: auto; max-width: 100%; display: flex; justify-content: center; padding: 6px 0; }
+.plotlegend{ display: flex; flex-wrap: wrap; gap: 16px; margin-top: 8px; font-size: 11.5px; color: var(--ink-3); }
+.plotlegend span{ display: inline-flex; align-items: center; gap: 6px; }
+.plotlegend i{ width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+#tcOut > .panel:first-child{ margin-top: 22px; }
+</style>
+</head>
+<body>
+
+<div class="shell">
+  <nav class="rail" aria-label="Secciones">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <h1>Integración numérica</h1>
+      <div class="brand-sub">Métodos Numéricos</div>
+    </div>
+
+    <div class="navgroup">
+      <h2>Fórmulas de Newton-Cotes</h2>
+      <button class="navlink" data-view="rect"><span class="glyph" aria-hidden="true">①</span>Regla de rectángulos</button>
+      <button class="navlink" data-view="simple"><span class="glyph" aria-hidden="true">②</span>Trapecio simple</button>
+      <button class="navlink" data-view="comp" aria-current="page"><span class="glyph" aria-hidden="true">③</span>Trapecio compuesto</button>
+    </div>
+
+    <div class="navgroup">
+      <h2>Errores</h2>
+      <button class="navlink" data-view="err"><span class="glyph" aria-hidden="true">④</span>Cota de error y n mínimo</button>
+    </div>
+
+    <div class="navgroup">
+      <h2>Vista</h2>
+      <button class="navlink" id="themeBtn" type="button"><span class="glyph" aria-hidden="true">◐</span><span id="themeLbl">Claro / oscuro</span></button>
+    </div>
+
+    <div class="railfoot">UPeU · Ing. de Sistemas<br>Sesión 12 · Integración<br>Tablas recalculadas en vivo</div>
+  </nav>
+
+  <main class="stage">
+    <section class="view" id="view-rect"></section>
+    <section class="view" id="view-simple"></section>
+    <section class="view is-active" id="view-comp"></section>
+    <section class="view" id="view-err"></section>
+  </main>
+</div>
+
+<script>
+"use strict";
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+function trimNum(v, d){
+  if (!isFinite(v)) return "—";
+  let s = v.toFixed(d);
+  if (s.indexOf(".") >= 0) s = s.replace(/0+$/, "").replace(/\.$/, "");
+  return s === "-0" ? "0" : s;
+}
+
+/* ---- resaltado de Python (igual al resto del sitio) ---- */
+const PY_KW = new Set(["import","def","return","if","elif","else","for","in","range","raise","lambda","None","True","False","not","and","or","while","break","continue","as","from","print","reversed"]);
+function hl(src){
+  const re = /(#[^\n]*)|("""[\s\S]*?"""|f?"(?:[^"\\\n]|\\.)*"|f?'(?:[^'\\\n]|\\.)*')|(\b\d+\.?\d*(?:[eE][+-]?\d+)?\b)|([A-Za-z_][A-Za-z_0-9]*)/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(src)) !== null){
+    out += esc(src.slice(last, m.index));
+    if (m[1]) out += '<span class="cm">' + esc(m[1]) + "</span>";
+    else if (m[2]) out += '<span class="st">' + esc(m[2]) + "</span>";
+    else if (m[3]) out += '<span class="nu">' + esc(m[3]) + "</span>";
+    else {
+      const w = m[4];
+      if (PY_KW.has(w)) out += '<span class="kw">' + esc(w) + "</span>";
+      else if (src[re.lastIndex] === "(") out += '<span class="fn">' + esc(w) + "</span>";
+      else out += esc(w);
+    }
+    last = re.lastIndex;
+  }
+  out += esc(src.slice(last));
+  return out;
+}
+
+function parseExpr(src){
+  let s = String(src).toLowerCase().replace(/\s+/g, "").replace(/,/g, ".").replace(/²/g, "^2").replace(/³/g, "^3").replace(/π/g, "pi").replace(/sen\(/g, "sin(");
+  if (!s) throw new Error("Escribe la función f(x)");
+  const toks = [];
+  const re = /(\d+\.?\d*(?:e[+-]?\d+)?|\.\d+)|([a-z]+)|([-+*/^()])/g;
+  let m, last = 0;
+  while ((m = re.exec(s)) !== null){
+    if (m.index !== last) throw new Error("Carácter no válido en f(x): «" + s.slice(last, m.index) + "»");
+    last = re.lastIndex;
+    if (m[1] !== undefined) toks.push({ t: "num", v: Number(m[1]) });
+    else if (m[2] !== undefined) toks.push({ t: "id", v: m[2] });
+    else toks.push({ t: "op", v: m[3] });
+  }
+  if (last !== s.length) throw new Error("Carácter no válido en f(x): «" + s.slice(last) + "»");
+  const FUNCS = ["sin", "cos", "tan", "exp", "ln", "log", "sqrt"];
+  let pos = 0;
+  const peek = () => toks[pos];
+  const isOp = v => toks[pos] && toks[pos].t === "op" && toks[pos].v === v;
+  function parseExprR(){
+    let a = parseTerm();
+    while (isOp("+") || isOp("-")){ const op = toks[pos++].v; a = { t: "bin", op, a, b: parseTerm() }; }
+    return a;
+  }
+  function startsPrimary(){
+    const k = peek();
+    return k && (k.t === "id" || (k.t === "op" && k.v === "("));
+  }
+  function parseTerm(){
+    let a = parseUnary();
+    for (;;){
+      if (isOp("*") || isOp("/")){ const op = toks[pos++].v; a = { t: "bin", op, a, b: parseUnary() }; }
+      else if (startsPrimary()) a = { t: "bin", op: "*", a, b: parseUnary() };
+      else break;
+    }
+    return a;
+  }
+  function parseUnary(){
+    if (isOp("-")){ pos++; return { t: "neg", a: parseUnary() }; }
+    if (isOp("+")){ pos++; return parseUnary(); }
+    return parsePower();
+  }
+  function parsePower(){
+    const base = parsePrimary();
+    if (isOp("^")){ pos++; return { t: "bin", op: "^", a: base, b: parseUnary() }; }
+    return base;
+  }
+  function parsePrimary(){
+    const k = toks[pos++];
+    if (!k) throw new Error("La expresión f(x) está incompleta");
+    if (k.t === "num") return { t: "num", v: k.v };
+    if (k.t === "id"){
+      if (k.v === "x" || k.v === "t") return { t: "x" };
+      if (k.v === "pi") return { t: "num", v: Math.PI };
+      if (k.v === "e") return { t: "num", v: Math.E };
+      if (FUNCS.indexOf(k.v) >= 0){
+        if (!isOp("(")) throw new Error("Escribe " + k.v + " con paréntesis: " + k.v + "(…)");
+        pos++;
+        const arg = parseExprR();
+        if (!isOp(")")) throw new Error("Falta cerrar un paréntesis");
+        pos++;
+        return { t: "fn", name: k.v, a: arg };
+      }
+      throw new Error("«" + k.v + "» no es una función ni constante conocida");
+    }
+    if (k.t === "op" && k.v === "("){
+      const a = parseExprR();
+      if (!isOp(")")) throw new Error("Falta cerrar un paréntesis");
+      pos++;
+      return a;
+    }
+    throw new Error("Símbolo inesperado «" + k.v + "» en f(x)");
+  }
+  const ast = parseExprR();
+  if (pos < toks.length) throw new Error("Sobra «" + toks[pos].v + "» en f(x)");
+  return ast;
+}
+function hasX(ast){
+  if (ast.t === "x") return true;
+  if (ast.t === "num") return false;
+  if (ast.t === "neg" || ast.t === "fn") return hasX(ast.a);
+  return hasX(ast.a) || hasX(ast.b);
+}
+/* series de Taylor truncadas a orden m: s[k] = f^(k)(t) / k! */
+const SR = {
+  cst(c, m){ const s = new Array(m + 1).fill(0); s[0] = c; return s; },
+  add(a, b){ return a.map((v, i) => v + b[i]); },
+  sub(a, b){ return a.map((v, i) => v - b[i]); },
+  neg(a){ return a.map(v => -v); },
+  mul(a, b){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    for (let i = 0; i <= m; i++) for (let j = 0; j <= m - i; j++) c[i + j] += a[i] * b[j];
+    return c;
+  },
+  div(a, b){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    for (let k = 0; k <= m; k++){
+      let s = a[k];
+      for (let j = 1; j <= k; j++) s -= b[j] * c[k - j];
+      c[k] = s / b[0];
+    }
+    return c;
+  },
+  exp(a){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    c[0] = Math.exp(a[0]);
+    for (let k = 1; k <= m; k++){
+      let s = 0;
+      for (let j = 1; j <= k; j++) s += j * a[j] * c[k - j];
+      c[k] = s / k;
+    }
+    return c;
+  },
+  ln(a){
+    const m = a.length - 1, c = new Array(m + 1).fill(0);
+    c[0] = Math.log(a[0]);
+    for (let k = 1; k <= m; k++){
+      let s = 0;
+      for (let j = 1; j <= k - 1; j++) s += j * c[j] * a[k - j];
+      c[k] = (a[k] - s / k) / a[0];
+    }
+    return c;
+  },
+  sincos(a){
+    const m = a.length - 1, s = new Array(m + 1).fill(0), c = new Array(m + 1).fill(0);
+    s[0] = Math.sin(a[0]); c[0] = Math.cos(a[0]);
+    for (let k = 1; k <= m; k++){
+      let ss = 0, cc = 0;
+      for (let j = 1; j <= k; j++){ ss += j * a[j] * c[k - j]; cc += j * a[j] * s[k - j]; }
+      s[k] = ss / k; c[k] = -cc / k;
+    }
+    return { s, c };
+  },
+  pow(a, p){
+    const m = a.length - 1;
+    if (a[0] === 0){
+      if (Number.isInteger(p) && p >= 0){
+        let r = SR.cst(1, m);
+        for (let i = 0; i < p; i++) r = SR.mul(r, a);
+        return r;
+      }
+      return new Array(m + 1).fill(NaN);
+    }
+    const c = new Array(m + 1).fill(0);
+    c[0] = Math.pow(a[0], p);
+    for (let k = 1; k <= m; k++){
+      let s = 0;
+      for (let j = 1; j <= k; j++) s += (p * j - (k - j)) * a[j] * c[k - j];
+      c[k] = s / (k * a[0]);
+    }
+    return c;
+  }
+};
+function evalS(ast, t, m){
+  switch (ast.t){
+    case "num": return SR.cst(ast.v, m);
+    case "x": { const s = SR.cst(t, m); if (m >= 1) s[1] = 1; return s; }
+    case "neg": return SR.neg(evalS(ast.a, t, m));
+    case "bin": {
+      if (ast.op === "^"){
+        const A = evalS(ast.a, t, m);
+        if (!hasX(ast.b)) return SR.pow(A, evalS(ast.b, t, 0)[0]);
+        return SR.exp(SR.mul(evalS(ast.b, t, m), SR.ln(A)));
+      }
+      const A = evalS(ast.a, t, m), B = evalS(ast.b, t, m);
+      if (ast.op === "+") return SR.add(A, B);
+      if (ast.op === "-") return SR.sub(A, B);
+      if (ast.op === "*") return SR.mul(A, B);
+      return SR.div(A, B);
+    }
+    case "fn": {
+      const A = evalS(ast.a, t, m);
+      if (ast.name === "exp") return SR.exp(A);
+      if (ast.name === "ln") return SR.ln(A);
+      if (ast.name === "log"){ const L = SR.ln(A), k = 1 / Math.LN10; return L.map(v => v * k); }
+      if (ast.name === "sqrt") return SR.pow(A, 0.5);
+      const sc = SR.sincos(A);
+      if (ast.name === "sin") return sc.s;
+      if (ast.name === "cos") return sc.c;
+      return SR.div(sc.s, sc.c);
+    }
+  }
+  return SR.cst(NaN, m);
+}
+const factN = k => { let f = 1; for (let i = 2; i <= k; i++) f *= i; return f; };
+
+const parN = (v, d) => v < 0 ? "(" + trimNum(v, d == null ? 6 : d) + ")" : trimNum(v, d == null ? 6 : d);
+const $ = id => document.getElementById(id);
+
+/* ============================================================
+   COMPILADOR NUMÉRICO RÁPIDO de f(x) (para miles de evaluaciones)
+   ============================================================ */
+function compileNum(ast){
+  switch (ast.t){
+    case "num": { const v = ast.v; return () => v; }
+    case "x": return x => x;
+    case "neg": { const a = compileNum(ast.a); return x => -a(x); }
+    case "bin": {
+      const a = compileNum(ast.a), b = compileNum(ast.b);
+      if (ast.op === "+") return x => a(x) + b(x);
+      if (ast.op === "-") return x => a(x) - b(x);
+      if (ast.op === "*") return x => a(x) * b(x);
+      if (ast.op === "/") return x => a(x) / b(x);
+      return x => Math.pow(a(x), b(x));
+    }
+    case "fn": {
+      const a = compileNum(ast.a);
+      switch (ast.name){
+        case "sin": return x => Math.sin(a(x));
+        case "cos": return x => Math.cos(a(x));
+        case "tan": return x => Math.tan(a(x));
+        case "exp": return x => Math.exp(a(x));
+        case "ln": return x => Math.log(a(x));
+        case "log": return x => Math.log10(a(x));
+        default: return x => Math.sqrt(a(x));
+      }
+    }
+  }
+  return () => NaN;
+}
+function evalConst(src, msg){
+  const s = String(src).trim();
+  if (!s) throw new Error(msg);
+  const v = compileNum(parseExpr(s))(0);
+  if (!isFinite(v)) throw new Error(msg);
+  return v;
+}
+
+/* ---- reglas básicas ---- */
+function trapecio(f, a, b, n){
+  const h = (b - a) / n;
+  let interior = 0;
+  for (let i = 1; i < n; i++) interior += f(a + i * h);
+  const fa = f(a), fb = f(b);
+  return { h, fa, fb, interior, I: (h / 2) * (fa + 2 * interior + fb) };
+}
+function rectangulos(f, a, b, n, mode){
+  const h = (b - a) / n, off = mode === "left" ? 0 : mode === "right" ? 1 : 0.5;
+  let s = 0;
+  for (let i = 1; i <= n; i++) s += f(a + (i - 1 + off) * h);
+  return { h, S: h * s, off };
+}
+function simpsonRef(f, a, b, n){
+  const h = (b - a) / n;
+  let s = f(a) + f(b);
+  for (let i = 1; i < n; i++) s += f(a + i * h) * (i % 2 ? 4 : 2);
+  return s * h / 3;
+}
+/* máx |f''(x)| en [a,b] con derivadas exactas por series de Taylor */
+function maxF2(ast, a, b){
+  let mx = 0, at = a, ok = false;
+  for (let i = 0; i <= 2000; i++){
+    const t = a + (b - a) * i / 2000;
+    let v;
+    try{ v = Math.abs(evalS(ast, t, 2)[2]) * 2; } catch(e){ v = NaN; }
+    if (isFinite(v)){ ok = true; if (v > mx){ mx = v; at = t; } }
+  }
+  return ok ? { M: mx, at } : null;
+}
+
+/* ============================================================
+   GRÁFICA: f(x) con trapecios o rectángulos
+   ============================================================ */
+function plotIntegral(f, a, b, n, kind, off){
+  const W = 640, H = 340, ML = 50, MR = 18, MT = 18, MB = 34;
+  const plotW = W - ML - MR, plotH = H - MT - MB;
+  const N = 300, ys = [];
+  for (let i = 0; i <= N; i++) ys.push(f(a + (b - a) * i / N));
+  const finite = ys.filter(v => isFinite(v));
+  let ymin = Math.min(0, Math.min.apply(null, finite)), ymax = Math.max(0, Math.max.apply(null, finite));
+  if (ymin === ymax){ ymin -= 1; ymax += 1; }
+  const pad = (ymax - ymin) * 0.08; ymax += pad; if (ymin < 0) ymin -= pad;
+  const sx = x => ML + (x - a) / (b - a) * plotW;
+  const sy = y => MT + (1 - (y - ymin) / (ymax - ymin)) * plotH;
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" width="100%" style="max-width:640px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">';
+  for (let i = 0; i <= 4; i++){
+    const yv = ymin + (ymax - ymin) * i / 4, yy = sy(yv);
+    svg += '<line x1="' + ML + '" y1="' + yy.toFixed(2) + '" x2="' + (ML + plotW) + '" y2="' + yy.toFixed(2) + '" style="stroke:var(--rule);stroke-width:1;stroke-dasharray:2,3"/>';
+    svg += '<text x="' + (ML - 8) + '" y="' + (yy + 3).toFixed(2) + '" font-size="10" text-anchor="end" style="fill:var(--ink-3)">' + trimNum(yv, 2) + '</text>';
+  }
+  const draw = n <= 100;
+  const h = (b - a) / n;
+  if (draw){
+    for (let i = 0; i < n; i++){
+      const x0 = a + i * h, x1 = a + (i + 1) * h;
+      let pts;
+      if (kind === "rect"){
+        const c = x0 + off * h, fc = f(c);
+        pts = [[x0, 0], [x0, fc], [x1, fc], [x1, 0]];
+      } else pts = [[x0, 0], [x0, f(x0)], [x1, f(x1)], [x1, 0]];
+      svg += '<polygon points="' + pts.map(p => sx(p[0]).toFixed(2) + "," + sy(p[1]).toFixed(2)).join(" ") + '" style="fill:var(--accent-wash);stroke:var(--accent);stroke-width:1.2"/>';
+    }
+  }
+  let path = "";
+  for (let i = 0; i <= N; i++){
+    if (!isFinite(ys[i])) continue;
+    path += (path ? "L" : "M") + sx(a + (b - a) * i / N).toFixed(2) + "," + sy(ys[i]).toFixed(2) + " ";
+  }
+  svg += '<line x1="' + ML + '" y1="' + MT + '" x2="' + ML + '" y2="' + (MT + plotH) + '" style="stroke:var(--rule-strong);stroke-width:1"/>';
+  svg += '<line x1="' + ML + '" y1="' + sy(0).toFixed(2) + '" x2="' + (ML + plotW) + '" y2="' + sy(0).toFixed(2) + '" style="stroke:var(--rule-strong);stroke-width:1"/>';
+  svg += '<path d="' + path + '" fill="none" style="stroke:var(--ink);stroke-width:2"/>';
+  if (draw && n <= 40){
+    for (let i = 0; i <= n; i++){
+      const xi = kind === "rect" ? (i < n ? a + (i + off) * h : null) : a + i * h;
+      if (xi === null) continue;
+      svg += '<circle cx="' + sx(xi).toFixed(2) + '" cy="' + sy(f(xi)).toFixed(2) + '" r="3.8" style="fill:var(--stop);stroke:var(--panel);stroke-width:1.2"/>';
+    }
+  }
+  const ticks = Math.min(n, 6);
+  for (let i = 0; i <= ticks; i++){
+    const xv = a + (b - a) * i / ticks;
+    svg += '<text x="' + sx(xv).toFixed(2) + '" y="' + (H - 10) + '" font-size="10" text-anchor="middle" style="fill:var(--ink-3)">' + trimNum(xv, 3) + '</text>';
+  }
+  return svg + "</svg>";
+}
+function plotPanel(titulo, svg, shapeLabel, pointLabel){
+  return '<div class="panel"><div class="panel-head"><h3 class="sec">' + titulo + '</h3></div><div class="panel-body">' +
+    '<div class="plotwrap">' + svg + '</div>' +
+    '<div class="plotlegend"><span><i style="background:var(--ink);border-radius:2px;width:16px;height:3px"></i>f(x)</span><span><i style="background:var(--accent-wash);border:1px solid var(--accent);border-radius:2px;width:14px;height:10px"></i>' + shapeLabel + '</span><span><i style="background:var(--stop)"></i>' + pointLabel + '</span></div></div></div>';
+}
+
+/* ============================================================
+   VISTAS (se construyen desde una descripción: misma interfaz en las 4)
+   ============================================================ */
+const HELP = "Usa x (o t), + − * / ^, paréntesis y las funciones sin, cos, tan, exp, ln (natural), log (base 10), sqrt; constantes pi y e.";
+const GAA_FN = "10 + 5*sin(pi*t/4) + exp(0.15*t)";
+const GAA_EXACT = "120 + 40/pi + (exp(1.8) - 1)/0.15";
+
+const VIEWS = {
+  rc: {
+    id: "rect", eyebrow: "Sesión 12 · Fórmulas de Newton-Cotes", title: "Regla de los rectángulos",
+    lede: "Divide [a, b] en n subintervalos de ancho h = (b − a)/n, toma en cada uno un punto c<sub>i</sub> y suma las áreas de los rectángulos de base h y altura f(c<sub>i</sub>): S<sub>n</sub> = Σ h·f(c<sub>i</sub>). Cuando n → ∞ se obtiene la integral de Riemann.",
+    hasN: true, hasNs: true, btn: "Calcular suma de rectángulos", codeTitle: "Código en Python — regla de los rectángulos",
+    extra: '<div class="field"><label for="rcMode">Punto c<sub>i</sub> del subintervalo</label><select id="rcMode"><option value="mid">Punto medio (como en clase)</option><option value="left">Extremo izquierdo</option><option value="right">Extremo derecho</option></select></div>',
+    presets: [
+      { t: "Clase: ∫₋₁¹ (1 − x²) dx, n = 4, punto medio", fn: "1 - x^2", a: -1, b: 1, n: 4, exact: "4/3", ns: "4, 8, 16, 32, 64", x: { rcMode: "mid" } },
+      { t: "Clase: ∫₋₁¹ (1 − x²) dx, n = 4, extremo izquierdo", fn: "1 - x^2", a: -1, b: 1, n: 4, exact: "4/3", ns: "4, 8, 16, 32, 64", x: { rcMode: "left" } },
+      { t: "∫₀¹ eˣ dx, n = 10, punto medio", fn: "exp(x)", a: 0, b: 1, n: 10, exact: "exp(1) - 1", ns: "2, 4, 8, 16, 32", x: { rcMode: "mid" } }
+    ]
+  },
+  ts: {
+    id: "simple", eyebrow: "Sesión 12 · Fórmulas de Newton-Cotes", title: "Regla del trapecio simple",
+    lede: "Usa solo dos abscisas, x₀ = a y x₁ = b (n = 1): reemplaza f por la recta de Lagrange que une (a, f(a)) y (b, f(b)). La integral de esa recta es el área de un trapecio de altura h = b − a y bases f(a), f(b): ∫ f ≈ (h/2)·[f(a) + f(b)].",
+    hasN: false, hasNs: false, btn: "Calcular trapecio simple", codeTitle: "Código en Python — trapecio simple",
+    presets: [
+      { t: "Clase: ∫₃³·⁶ 1/x dx", fn: "1/x", a: 3, b: 3.6, exact: "ln(3.6) - ln(3)" },
+      { t: "Clase: ∫₀¹ eˣ dx", fn: "exp(x)", a: 0, b: 1, exact: "exp(1) - 1" },
+      { t: "Ejercicio: ∫₀⁴ (1 + x²)^(−1/2) dx", fn: "(1 + x^2)^(-1/2)", a: 0, b: 4, exact: "ln(4 + sqrt(17))" }
+    ]
+  },
+  tc: {
+    id: "comp", eyebrow: "Sesión 12 · Fórmulas de Newton-Cotes", title: "Regla del trapecio compuesto",
+    lede: "Aplica el trapecio simple en cada subintervalo [x<sub>i</sub>, x<sub>i+1</sub>] de ancho h = (b − a)/n y suma: ∫ f ≈ (h/2)·{ f(x₀) + 2·[f(x₁) + ⋯ + f(x<sub>n−1</sub>)] + f(x<sub>n</sub>) }. Equivale a conectar los puntos de la curva con segmentos de recta (interpolación lineal por tramos); el error baja como h².",
+    hasN: true, hasNs: true, btn: "Calcular integral", codeTitle: "Código en Python — trapecio_compuesto(f, a, b, n) y tabla de convergencia", bound: true,
+    presets: [
+      { t: "GAA: tráfico de red R(t) en [0, 12] s", fn: GAA_FN, a: 0, b: 12, n: 4, exact: GAA_EXACT, ns: "4, 10, 50, 100, 1000" },
+      { t: "Clase: ∫₃³·⁶ 1/x dx, n = 6", fn: "1/x", a: 3, b: 3.6, n: 6, exact: "ln(3.6) - ln(3)", ns: "1, 2, 3, 6, 12" },
+      { t: "Clase: ∫₀¹ eˣ dx, n = 10", fn: "exp(x)", a: 0, b: 1, n: 10, exact: "exp(1) - 1", ns: "1, 2, 5, 10, 20" },
+      { t: "Ejercicio: ∫₀⁴ (1 + x²)^(−1/2) dx, n = 8 (compara n = 1, 2, 8)", fn: "(1 + x^2)^(-1/2)", a: 0, b: 4, n: 8, exact: "ln(4 + sqrt(17))", ns: "1, 2, 8" }
+    ]
+  },
+  er: {
+    id: "err", eyebrow: "Sesión 12 · Estimación del error cometido", title: "Cota de error y n mínimo",
+    lede: "Trapecio simple: |E| ≤ (h³/12)·máx|f″(x)|. Trapecio compuesto: |E| ≤ (n·h³/12)·máx|f″(x)|, con h = (b − a)/n. Igualando la cota a una tolerancia se despeja el menor n que garantiza la precisión pedida.",
+    hasN: true, hasNs: false, btn: "Calcular cota y n mínimo", codeTitle: "Código en Python — cota del error y n mínimo", exactOptional: true,
+    extra: '<div class="field"><label for="erRule">Regla</label><select id="erRule"><option value="comp">Trapecio compuesto</option><option value="simple">Trapecio simple (n = 1)</option></select></div>' +
+      '<div class="field"><label for="erTol">Tolerancia (error máximo)</label><input id="erTol" type="text" value="0.0005"></div>' +
+      '<div class="field"><label for="erH">h práctico (opcional)</label><input id="erH" type="text" value="0.025"></div>',
+    presets: [
+      { t: "Clase: eˣ cos x en [0, 1.2] — tres decimales correctos (error < 0.5·10⁻³)", fn: "exp(x)*cos(x)", a: 0, b: 1.2, n: 48, exact: "(exp(1.2)*(cos(1.2) + sin(1.2)) - 1)/2", x: { erRule: "comp", erTol: "0.0005", erH: "0.025" } },
+      { t: "Clase: ∫₀¹ eˣ dx — trapecio simple (cota 0.2265)", fn: "exp(x)", a: 0, b: 1, n: 1, exact: "exp(1) - 1", x: { erRule: "simple", erTol: "", erH: "" } },
+      { t: "Clase: ∫₀¹ eˣ dx — trapecio compuesto n = 10 (cota 0.0023)", fn: "exp(x)", a: 0, b: 1, n: 10, exact: "exp(1) - 1", x: { erRule: "comp", erTol: "0.001", erH: "" } }
+    ]
+  }
+};
+
+function buildView(p){
+  const c = VIEWS[p];
+  const ex = c.exactOptional ? "Valor exacto (opcional, para comparar el error real)" : "Valor exacto (número o expresión)";
+  $("view-" + c.id).innerHTML =
+    '<header><p class="eyebrow">' + c.eyebrow + '</p><h2>' + c.title + '</h2></header>' +
+    '<p class="lede">' + c.lede + '</p>' +
+    '<div class="panel"><div class="panel-head"><h3 class="sec">1 · Integral a calcular</h3></div><div class="panel-body"><div class="controls">' +
+      '<div class="field" style="grid-column:1/-1"><label for="' + p + 'Fn">f(x)</label><input id="' + p + 'Fn" type="text" autocomplete="off" spellcheck="false"></div>' +
+      '<div class="field"><label for="' + p + 'A">Límite inferior a</label><input id="' + p + 'A" type="text" inputmode="decimal"></div>' +
+      '<div class="field"><label for="' + p + 'B">Límite superior b</label><input id="' + p + 'B" type="text" inputmode="decimal"></div>' +
+      (c.hasN ? '<div class="field"><label for="' + p + 'N">Subintervalos n</label><input id="' + p + 'N" type="text" inputmode="numeric"></div>' : "") +
+      (c.extra || "") +
+      '<div class="field"><label for="' + p + 'Preset">Ejemplos</label><select id="' + p + 'Preset"></select></div>' +
+    '</div><p class="tcap">' + HELP + '</p></div></div>' +
+    '<div class="panel"><div class="panel-head"><h3 class="sec">2 · Valor exacto' + (c.hasNs ? " y análisis de convergencia" : "") + '</h3></div><div class="panel-body"><div class="controls">' +
+      '<div class="field"><label for="' + p + 'ExMode">Valor exacto para el error</label><select id="' + p + 'ExMode"><option value="manual">Dado (valor o expresión)</option><option value="auto">Referencia numérica (Simpson, n = 20000)</option></select></div>' +
+      '<div class="field" style="grid-column:1/-1"><label for="' + p + 'Exact">' + ex + '</label><input id="' + p + 'Exact" type="text" autocomplete="off" spellcheck="false"></div>' +
+      (c.hasNs ? '<div class="field" style="grid-column:1/-1"><label for="' + p + 'Ns">Valores de n de la tabla de convergencia</label><input id="' + p + 'Ns" type="text"></div>' : "") +
+      '<div class="field"><label for="' + p + 'Dec">Decimales</label><input id="' + p + 'Dec" type="text" inputmode="numeric" value="6"></div>' +
+    '</div><div class="rowend"><button class="btn" id="' + p + 'Run" type="button">' + c.btn + '</button></div><div class="errbox" id="' + p + 'Err"></div></div></div>' +
+    '<div id="' + p + 'Out"></div>' +
+    '<details class="code" style="margin-top:22px"><summary>' + c.codeTitle + '</summary><pre class="py"><code id="' + p + 'Code"></code></pre></details>';
+
+  const sel = $(p + "Preset");
+  sel.innerHTML = c.presets.map((e, i) => '<option value="' + i + '">' + esc(e.t) + "</option>").join("");
+  const apply = e => {
+    $(p + "Fn").value = e.fn; $(p + "A").value = e.a; $(p + "B").value = e.b;
+    if (c.hasN) $(p + "N").value = e.n;
+    $(p + "ExMode").value = "manual"; $(p + "Exact").value = e.exact || "";
+    if (c.hasNs) $(p + "Ns").value = e.ns;
+    if (e.x) Object.keys(e.x).forEach(id => { $(id).value = e.x[id]; });
+  };
+  sel.addEventListener("change", () => apply(c.presets[Number(sel.value)]));
+  apply(c.presets[0]);
+}
+["rc", "ts", "tc", "er"].forEach(buildView);
+
+/* lectura común: función, límites, n, valor exacto */
+function common(p){
+  const c = VIEWS[p];
+  const ast = parseExpr($(p + "Fn").value);
+  const f = compileNum(ast);
+  const a = evalConst($(p + "A").value, "El límite a no es válido");
+  const b = evalConst($(p + "B").value, "El límite b no es válido");
+  if (!(b > a)) throw new Error("Debe cumplirse a < b");
+  let n = 1;
+  if (c.hasN){
+    n = Math.round(Number(String($(p + "N").value).replace(",", ".")));
+    if (!isFinite(n) || n < 1 || n > 200000) throw new Error("n debe ser un entero entre 1 y 200000");
+  }
+  const dec = Math.max(0, Math.min(12, Math.round(Number($(p + "Dec").value) || 6)));
+  const fa = f(a), fb = f(b);
+  if (!isFinite(fa) || !isFinite(fb)) throw new Error("f(x) no está definida en los extremos del intervalo");
+  let exact = null, exactNote = "";
+  if ($(p + "ExMode").value === "auto"){
+    exact = simpsonRef(f, a, b, 20000); exactNote = "la referencia numérica (Simpson, n = 20000)";
+  } else if ($(p + "Exact").value.trim()){
+    exact = evalConst($(p + "Exact").value, "El valor exacto no es válido"); exactNote = "el valor exacto dado";
+  } else if (!c.exactOptional) throw new Error("Escribe el valor exacto o elige la referencia numérica");
+  return { ast, f, a, b, n, dec, exact, exactNote, fmt: v => trimNum(v, dec) };
+}
+function nsList(p){
+  const arr = $(p + "Ns").value.split(/[\s,;]+/).filter(Boolean).map(Number);
+  if (!arr.length || arr.some(v => !Number.isInteger(v) || v < 1 || v > 200000)) throw new Error("La lista de n debe tener enteros entre 1 y 200000, separados por comas");
+  return arr;
+}
+function showErr(p, e){ $(p + "Err").textContent = e.message; $(p + "Out").innerHTML = ""; }
+function answerBox(label, valTxt, exact, I, extra){
+  const err = exact === null ? null : Math.abs(exact - I);
+  const pct = exact === null || exact === 0 ? null : err / Math.abs(exact) * 100;
+  return '<div class="answer" style="margin-top:16px"><div class="answer-main"><div class="answer-lbl">' + label + '</div><div class="answer-val" style="font-size:20px">' + valTxt + '</div></div>' +
+    '<dl class="answer-facts">' + (exact === null ? "" : '<div><dt>Valor exacto</dt><dd>' + trimNum(exact, 8) + '</dd></div><div><dt>Error absoluto</dt><dd>' + trimNum(err, 8) + '</dd></div><div><dt>% de error</dt><dd>' + trimNum(pct, 4) + ' %</dd></div>') + (extra || "") + '</dl></div>';
+}
+function convTable(rowsHtml, boundHead){
+  return '<div class="tablewrap"><table class="data"><thead><tr><th class="l">n</th><th>h</th><th>Valor calculado</th><th>Error absoluto real</th><th>% de error</th>' + (boundHead ? '<th>' + boundHead + '</th>' : "") + '<th>Error previo ÷ error</th></tr></thead><tbody>' + rowsHtml + '</tbody></table></div>';
+}
+
+/* ============================================================
+   ① RECTÁNGULOS
+   ============================================================ */
+const RC_PY_CODE = `# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+def f(x):
+    return 1 - x ** 2
+
+A, B, N = -1, 1, 4
+PUNTO = "medio"          # "medio", "izquierdo" o "derecho"
+EXACTO = 4 / 3
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def rectangulos(f, a, b, n, punto="medio"):
+    h = (b - a) / n
+    desp = {"izquierdo": 0.0, "medio": 0.5, "derecho": 1.0}[punto]
+    suma = 0.0
+    for i in range(1, n + 1):
+        c = a + (i - 1 + desp) * h        # punto c_i del subintervalo i
+        suma += h * f(c)                  # area del rectangulo: base h, altura f(c_i)
+    return suma
+
+S = rectangulos(f, A, B, N, PUNTO)
+err = abs(EXACTO - S)
+print(f"h = {(B - A) / N}")
+print(f"S_{N} = {S:.4f}   error absoluto = {err:.4f}   error relativo = {err / abs(EXACTO) * 100:.2f}%")`;
+function rcRun(){
+  $("rcErr").textContent = "";
+  try{
+    const K = common("rc");
+    const mode = $("rcMode").value;
+    const R = rectangulos(K.f, K.a, K.b, K.n, mode);
+    const fmt = K.fmt, n = K.n;
+    const full = n <= 50;
+    const idxs = full ? Array.from({ length: n }, (_, i) => i + 1) : [1, 2, 3, -1, n - 2, n - 1, n];
+    let rows = "";
+    idxs.forEach(i => {
+      if (i === -1){ rows += '<tr><td colspan="6" style="text-align:center;color:var(--ink-4)">⋮ (' + (n - 6) + ' subintervalos intermedios)</td></tr>'; return; }
+      const x0 = K.a + (i - 1) * R.h, x1 = K.a + i * R.h, ci = x0 + R.off * R.h, fc = K.f(ci);
+      rows += "<tr><td class=\"l\">" + i + "</td><td>" + fmt(x0) + "</td><td>" + fmt(x1) + "</td><td>" + fmt(ci) + "</td><td>" + fmt(fc) + "</td><td>" + fmt(R.h * fc) + "</td></tr>";
+    });
+    const ns = nsList("rc");
+    const conv = [];
+    ns.forEach(nn => { const r = rectangulos(K.f, K.a, K.b, nn, mode); conv.push({ n: nn, h: r.h, S: r.S, e: K.exact === null ? NaN : Math.abs(K.exact - r.S) }); });
+    let convRows = "";
+    conv.forEach((r, i) => {
+      const ratio = i > 0 && r.e > 0 ? conv[i - 1].e / r.e : NaN;
+      convRows += "<tr><td class=\"l\">" + r.n + "</td><td>" + trimNum(r.h, 6) + "</td><td>" + trimNum(r.S, 8) + "</td><td>" + trimNum(r.e, 8) + "</td><td>" + (K.exact ? trimNum(r.e / Math.abs(K.exact) * 100, 6) + " %" : "—") + "</td><td>" + (isFinite(ratio) ? "÷ " + trimNum(ratio, 2) : "—") + "</td></tr>";
+    });
+    const modeTxt = mode === "mid" ? "punto medio" : mode === "left" ? "extremo izquierdo" : "extremo derecho";
+    $("rcOut").innerHTML =
+      '<div class="panel" style="margin-top:22px"><div class="panel-head"><h3 class="sec">Paso 3 — Ancho de paso h</h3></div><div class="panel-body"><div class="formula">h = (b − a) / n = (' + trimNum(K.b, 6) + ' − ' + parN(K.a, 6) + ') / ' + n + ' = <b>' + trimNum(R.h, 8) + '</b></div></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Subintervalos, puntos c<sub>i</sub> (' + modeTxt + ') y áreas</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">i</th><th>x<sub>i−1</sub></th><th>x<sub>i</sub></th><th>c<sub>i</sub></th><th>f(c<sub>i</sub>)</th><th>h·f(c<sub>i</sub>)</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        (full ? "" : '<p class="tcap">Con n &gt; 50 se muestran solo los primeros y últimos; el cálculo usa todos.</p>') +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Suma S<sub>n</sub> = Σ h·f(c<sub>i</sub>)</h3></div><div class="panel-body">' +
+        '<div class="formula">S<sub>' + n + '</sub> = ' + trimNum(R.h, 6) + ' · (Σ f(c<sub>i</sub>)) = ' + trimNum(R.h, 6) + ' · ' + fmt(R.S / R.h) + ' = <b>' + trimNum(R.S, K.dec) + '</b></div>' +
+        answerBox("Suma de rectángulos (n = " + n + ")", "S ≈ " + trimNum(R.S, K.dec), K.exact, R.S, '<div><dt>h</dt><dd>' + trimNum(R.h, 6) + '</dd></div>') +
+        (K.exact === null ? "" : '<p class="tcap" style="margin-top:10px">Error medido contra ' + K.exactNote + '.</p>') +
+      '</div></div>' +
+      plotPanel("Gráfica — f(x) y los " + (n <= 100 ? n + " rectángulos" : "rectángulos (n > 100: solo se dibuja la curva)"), plotIntegral(K.f, K.a, K.b, n, "rect", R.off), "Rectángulos", "Puntos c<sub>i</sub>") +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Convergencia al aumentar n</h3></div><div class="panel-body">' + convTable(convRows) +
+        '<div class="note ok"><b>Lectura</b>' + (mode === "mid" ? "Con el punto medio el error baja ~4 veces al duplicar n (orden h²)." : "Con un extremo el error baja ~2 veces al duplicar n (orden h).") + ' Al crecer n, S<sub>n</sub> tiende a la integral de Riemann.</div></div></div>';
+  } catch(e){ showErr("rc", e); }
+}
+$("rcRun").addEventListener("click", rcRun);
+$("rcCode").innerHTML = hl(RC_PY_CODE);
+
+/* ============================================================
+   ② TRAPECIO SIMPLE
+   ============================================================ */
+const TS_PY_CODE = `import math
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+def f(x):
+    return 1 / x
+
+A, B = 3, 3.6
+EXACTO = math.log(3.6) - math.log(3)
+M2 = 2 / A ** 3                      # max |f''(x)| en [A, B]  (f'' = 2/x^3, decrece)
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def trapecio_simple(f, a, b):
+    h = b - a
+    return h / 2 * (f(a) + f(b))     # area del trapecio: altura h, bases f(a) y f(b)
+
+h = B - A
+I = trapecio_simple(f, A, B)
+print(f"h = {h}   I = {I:.4f}   exacto = {EXACTO:.4f}   error = {abs(EXACTO - I):.4f}")
+print(f"cota |E| <= h^3/12 * max|f''| = {h ** 3 / 12 * M2:.6f}")`;
+function tsRun(){
+  $("tsErr").textContent = "";
+  try{
+    const K = common("ts");
+    const h = K.b - K.a, fa = K.f(K.a), fb = K.f(K.b), I = h / 2 * (fa + fb), fmt = K.fmt;
+    const m2 = maxF2(K.ast, K.a, K.b);
+    const bound = m2 ? Math.pow(h, 3) / 12 * m2.M : NaN;
+    const err = K.exact === null ? NaN : Math.abs(K.exact - I), pct = K.exact ? err / Math.abs(K.exact) * 100 : NaN;
+    $("tsOut").innerHTML =
+      '<div class="panel" style="margin-top:22px"><div class="panel-head"><h3 class="sec">Paso 3 — Dos abscisas: x₀ = a y x₁ = b</h3></div><div class="panel-body"><ul class="steplist">' +
+        '<li>h = x₁ − x₀ = ' + trimNum(K.b, 6) + ' − ' + parN(K.a, 6) + ' = <b>' + trimNum(h, 8) + '</b></li>' +
+        '<li>f(x₀) = f(' + trimNum(K.a, 6) + ') = <b>' + fmt(fa) + '</b></li>' +
+        '<li>f(x₁) = f(' + trimNum(K.b, 6) + ') = <b>' + fmt(fb) + '</b></li></ul></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Fórmula del trapecio simple</h3></div><div class="panel-body">' +
+        '<div class="formula">∫ f(x) dx ≈ (h/2)·[ f(x₀) + f(x₁) ]</div>' +
+        '<div class="formula" style="margin-top:8px">I ≈ ' + fmt(h / 2) + ' · [ ' + fmt(fa) + ' + ' + fmt(fb) + ' ] = ' + fmt(h / 2) + ' · ' + fmt(fa + fb) + ' = <b>' + trimNum(I, K.dec) + '</b></div>' +
+        answerBox("Trapecio simple", "I ≈ " + trimNum(I, K.dec), K.exact, I, '<div><dt>h</dt><dd>' + trimNum(h, 6) + '</dd></div>') +
+        (K.exact === null ? "" : '<p class="tcap" style="margin-top:10px">Error medido contra ' + K.exactNote + '.</p>') +
+      '</div></div>' +
+      plotPanel("Gráfica — f(x) y el trapecio", plotIntegral(K.f, K.a, K.b, 1, "trap"), "Trapecio", "Abscisas x₀, x₁") +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Cota del error: |E| ≤ (h³/12)·máx|f″(x)|</h3></div><div class="panel-body">' +
+        (m2 ? '<ul class="steplist"><li>máx |f″(x)| en [' + trimNum(K.a, 4) + ', ' + trimNum(K.b, 4) + '] ≈ <b>' + trimNum(m2.M, 6) + '</b> (en x ≈ ' + trimNum(m2.at, 4) + ')</li>' +
+          '<li>Cota = ' + trimNum(h, 4) + '³ / 12 · ' + trimNum(m2.M, 6) + ' = <b>' + trimNum(bound, 6) + '</b></li>' +
+          (K.exact === null ? "" : '<li>Error real = ' + trimNum(err, 8) + ' → ' + (err <= bound * (1 + 1e-9) + 1e-15 ? "queda por debajo de la cota ✓" : "supera la cota ✗") + '</li>') + '</ul>' : '<p class="tcap">No se pudo calcular f″ en este intervalo.</p>') +
+        ((isFinite(pct) && pct > 5) ? '<div class="note warn"><b>Intervalo grande</b>El error relativo es ' + trimNum(pct, 2) + ' %: el trapecio simple solo es aceptable en intervalos relativamente pequeños. Usa el trapecio compuesto con más subintervalos.</div>' :
+          '<div class="note ok"><b>Consideración</b>El trapecio simple da un valor aceptable cuando el intervalo de integración es relativamente pequeño; en intervalos grandes conviene el trapecio compuesto.</div>') +
+      '</div></div>';
+  } catch(e){ showErr("ts", e); }
+}
+$("tsRun").addEventListener("click", tsRun);
+$("tsCode").innerHTML = hl(TS_PY_CODE);
+
+/* ============================================================
+   ③ TRAPECIO COMPUESTO
+   ============================================================ */
+const TC_PY_CODE = `import math
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+def f(t):
+    return 10 + 5 * math.sin(math.pi * t / 4) + math.exp(0.15 * t)
+
+A, B, N = 0, 12, 4
+EXACTO = 120 + 40 / math.pi + (math.exp(1.8) - 1) / 0.15   # integral analitica
+NS = [4, 10, 50, 100, 1000]
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def trapecio_compuesto(f, a, b, n):
+    """Regla del trapecio compuesto con n subintervalos de igual ancho."""
+    h = (b - a) / n
+    suma = f(a) + f(b)                  # extremos: peso 1
+    for i in range(1, n):
+        suma += 2 * f(a + i * h)        # puntos interiores: peso 2
+    return h / 2 * suma
+
+print(f"h = {(B - A) / N}")
+print(f"I_trapecio(n={N}) = {trapecio_compuesto(f, A, B, N):.6f}")
+print()
+print(f"{'n':>6} {'h':>8} {'I_n':>14} {'Error abs':>14} {'% error':>10}")
+for n in NS:
+    I = trapecio_compuesto(f, A, B, n)
+    err = abs(EXACTO - I)
+    print(f"{n:>6} {(B - A) / n:>8.4f} {I:>14.8f} {err:>14.8f} {err / abs(EXACTO) * 100:>9.6f}%")`;
+function tcRun(){
+  $("tcErr").textContent = "";
+  try{
+    const K = common("tc");
+    const n = K.n, fmt = K.fmt;
+    const T = trapecio(K.f, K.a, K.b, n);
+    const full = n <= 50;
+    const idxs = full ? Array.from({ length: n + 1 }, (_, i) => i) : [0, 1, 2, -1, n - 2, n - 1, n];
+    let meshRows = "";
+    idxs.forEach(i => {
+      if (i === -1){ meshRows += '<tr><td colspan="5" style="text-align:center;color:var(--ink-4)">⋮ (' + (n - 5) + ' puntos intermedios)</td></tr>'; return; }
+      const xi = K.a + i * T.h, fi = K.f(xi), w = (i === 0 || i === n) ? 1 : 2;
+      meshRows += "<tr><td class=\"l\">" + i + "</td><td>" + fmt(xi) + "</td><td>" + fmt(fi) + "</td><td>" + w + "</td><td>" + fmt(w * fi) + "</td></tr>";
+    });
+    let formulaNums;
+    if (n <= 12){
+      const parts = [fmt(T.fa)];
+      for (let i = 1; i < n; i++) parts.push("2(" + fmt(K.f(K.a + i * T.h)) + ")");
+      parts.push(fmt(T.fb));
+      formulaNums = "I ≈ " + fmt(T.h / 2) + " · [ " + parts.join(" + ") + " ]";
+    } else formulaNums = "I ≈ " + fmt(T.h / 2) + " · [ " + fmt(T.fa) + " + 2(" + fmt(T.interior) + ") + " + fmt(T.fb) + " ]";
+    const bracket = T.fa + 2 * T.interior + T.fb;
+
+    const ns = nsList("tc");
+    const m2 = maxF2(K.ast, K.a, K.b);
+    const rows = ns.map(nn => { const R = trapecio(K.f, K.a, K.b, nn); return { n: nn, h: R.h, I: R.I, e: K.exact === null ? NaN : Math.abs(K.exact - R.I), bound: m2 ? nn * Math.pow(R.h, 3) / 12 * m2.M : NaN }; });
+    let convRows = "";
+    rows.forEach((r, i) => {
+      const ratio = i > 0 && r.e > 0 ? rows[i - 1].e / r.e : NaN;
+      const expected = i > 0 ? Math.pow(r.n / rows[i - 1].n, 2) : NaN;
+      convRows += "<tr><td class=\"l\">" + r.n + "</td><td>" + trimNum(r.h, 6) + "</td><td>" + trimNum(r.I, 8) + "</td><td>" + trimNum(r.e, 8) + "</td><td>" + (K.exact ? trimNum(r.e / Math.abs(K.exact) * 100, 6) + " %" : "—") + "</td><td>" +
+        (isFinite(r.bound) ? trimNum(r.bound, 6) : "—") + "</td><td>" + (isFinite(ratio) ? "÷ " + trimNum(ratio, 2) + (isFinite(expected) ? " (≈ " + trimNum(expected, 2) + ")" : "") : "—") + "</td></tr>";
+    });
+    const err = K.exact === null ? NaN : Math.abs(K.exact - T.I);
+
+    $("tcOut").innerHTML =
+      '<div class="panel" style="margin-top:22px"><div class="panel-head"><h3 class="sec">Paso 3 — Ancho de paso h</h3></div><div class="panel-body">' +
+        '<div class="formula">h = (b − a) / n = (' + trimNum(K.b, 6) + ' − ' + parN(K.a, 6) + ') / ' + n + ' = <b>' + trimNum(T.h, 8) + '</b></div></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Malla de puntos x<sub>i</sub> = a + i·h y valores f(x<sub>i</sub>)</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">i</th><th>x<sub>i</sub></th><th>f(x<sub>i</sub>)</th><th>Peso</th><th>Peso · f(x<sub>i</sub>)</th></tr></thead><tbody>' + meshRows + '</tbody></table></div>' +
+        (full ? "" : '<p class="tcap">Con n &gt; 50 se muestran solo los primeros y últimos puntos; el cálculo usa todos.</p>') + '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Fórmula del trapecio compuesto</h3></div><div class="panel-body">' +
+        '<div class="formula">I ≈ (h/2) · { f(x<sub>0</sub>) + 2·[ f(x<sub>1</sub>) + ⋯ + f(x<sub>n−1</sub>) ] + f(x<sub>n</sub>) }</div>' +
+        '<div class="formula" style="margin-top:8px">' + formulaNums + '</div>' +
+        '<div class="formula" style="margin-top:8px">I ≈ ' + fmt(T.h / 2) + ' · ' + fmt(bracket) + ' = <b>' + trimNum(T.I, K.dec) + '</b></div>' +
+        answerBox("I trapecio (n = " + n + ")", "I ≈ " + trimNum(T.I, K.dec), K.exact, T.I, '<div><dt>h</dt><dd>' + trimNum(T.h, 6) + '</dd></div>') +
+        (K.exact === null ? "" : '<p class="tcap" style="margin-top:10px">Error medido contra ' + K.exactNote + '.</p>') +
+      '</div></div>' +
+      plotPanel("Gráfica — f(x) y los " + (n <= 100 ? n + " trapecios" : "trapecios (n > 100: solo se dibuja la curva)"), plotIntegral(K.f, K.a, K.b, n, "trap"), "Trapecios", "Nodos x<sub>i</sub>") +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Análisis de convergencia</h3></div><div class="panel-body">' +
+        convTable(convRows, "Cota n·h³/12·máx|f″|") +
+        '<p class="tcap" style="margin-top:10px">Cota teórica: |E| ≤ (n·h³/12)·máx|f″(x)|' + (m2 ? ' con máx|f″| ≈ ' + trimNum(m2.M, 6) + ' en [' + trimNum(K.a, 4) + ', ' + trimNum(K.b, 4) + ']' : '') + '. La última columna compara cuánto bajó el error con lo esperado por el orden O(h²), entre paréntesis (n / n<sub>previo</sub>)².</p>' +
+        (K.exact === null ? "" : '<div class="note ok"><b>Lectura</b>Al aumentar n el error absoluto real baja de ' + trimNum(rows[0].e, 6) + ' (n = ' + rows[0].n + ') a ' + trimNum(rows[rows.length - 1].e, 8) + ' (n = ' + rows[rows.length - 1].n + '): la aproximación converge a la integral' + (m2 ? ', y en cada fila el error real queda por debajo de la cota teórica.' : '.') + '</div>') +
+      '</div></div>';
+  } catch(e){ showErr("tc", e); }
+}
+$("tcRun").addEventListener("click", tcRun);
+$("tcCode").innerHTML = hl(TC_PY_CODE);
+
+/* ============================================================
+   ④ COTA DE ERROR Y n MÍNIMO
+   ============================================================ */
+const ER_PY_CODE = `import math
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+def f2(x):                           # segunda derivada de f(x) = e^x cos x
+    return -2 * math.exp(x) * math.sin(x)
+
+A, B = 0, 1.2
+TOL = 0.5e-3                         # tres decimales correctos
+H_PRACTICO = 0.025                   # h "redondo" elegido en clase
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+M = max(abs(f2(A + (B - A) * i / 4000)) for i in range(4001))    # max |f''| en [A, B]
+
+# |E| <= n*h^3/12 * M  con h = (B-A)/n   =>   (B-A) * h^2 / 12 * M <= TOL
+h_max = math.sqrt(12 * TOL / ((B - A) * M))
+n_min = math.ceil((B - A) / h_max)
+n_practico = math.ceil((B - A) / H_PRACTICO)
+
+print(f"max|f''| = {M:.4f}")
+print(f"h <= {h_max:.4f}   ->   n minimo = {n_min}")
+print(f"con h = {H_PRACTICO}: n = {n_practico}")`;
+function erRun(){
+  $("erErr").textContent = "";
+  try{
+    const K = common("er");
+    const rule = $("erRule").value;
+    const L = K.b - K.a;
+    const m2 = maxF2(K.ast, K.a, K.b);
+    if (!m2) throw new Error("No se pudo calcular f″ en [" + trimNum(K.a, 4) + ", " + trimNum(K.b, 4) + "]");
+    const M = m2.M;
+    const n = rule === "simple" ? 1 : K.n;
+    const h = L / n;
+    const bound = n * Math.pow(h, 3) / 12 * M;
+    const tolRaw = $("erTol").value.trim();
+    const tol = tolRaw ? evalConst(tolRaw, "La tolerancia no es válida") : null;
+    const hPrRaw = $("erH").value.trim();
+    const hPr = hPrRaw ? evalConst(hPrRaw, "El h práctico no es válido") : null;
+    const T = trapecio(K.f, K.a, K.b, n);
+    const err = K.exact === null ? null : Math.abs(K.exact - T.I);
+
+    let minHtml = "";
+    if (rule === "comp" && tol){
+      const hMax = Math.sqrt(12 * tol / (L * M));
+      const nMin = Math.max(1, Math.ceil(L / hMax - 1e-9));
+      const nMinB = nMin * Math.pow(L / nMin, 3) / 12 * M;
+      const Tm = trapecio(K.f, K.a, K.b, nMin);
+      let pr = "";
+      if (hPr){
+        const nPr = Math.ceil(L / hPr - 1e-9), bPr = nPr * Math.pow(L / nPr, 3) / 12 * M;
+        pr = '<li>Con el h práctico h = ' + trimNum(hPr, 6) + ': n = ' + trimNum(L, 6) + ' / ' + trimNum(hPr, 6) + ' = <b>' + nPr + '</b> subintervalos (cota ' + trimNum(bPr, 6) + ' ' + (bPr <= tol ? '≤' : '>') + ' ' + trimNum(tol, 6) + ')</li>';
+      }
+      minHtml =
+        '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Menor n para error ≤ ' + trimNum(tol, 6) + '</h3></div><div class="panel-body">' +
+          '<div class="formula">n·h³/12 · M ≤ tol, &nbsp; n = (b − a)/h &nbsp;⇒&nbsp; (b − a)·h²/12 · M ≤ tol</div>' +
+          '<ul class="steplist" style="margin-top:12px">' +
+            '<li>(' + trimNum(L, 6) + ' · h² / 12) · ' + trimNum(M, 4) + ' ≤ ' + trimNum(tol, 6) + ' &nbsp;⇒&nbsp; h ≤ √(12·' + trimNum(tol, 6) + ' / (' + trimNum(L, 6) + '·' + trimNum(M, 4) + ')) = <b>' + trimNum(hMax, 6) + '</b></li>' +
+            '<li>n ≥ (b − a)/h = ' + trimNum(L, 6) + ' / ' + trimNum(hMax, 6) + ' = ' + trimNum(L / hMax, 4) + ' &nbsp;⇒&nbsp; <b>n mínimo = ' + nMin + '</b> (h = ' + trimNum(L / nMin, 6) + ', cota ' + trimNum(nMinB, 6) + ')</li>' + pr +
+          '</ul>' +
+          answerBox("n mínimo", "n = " + nMin, null, 0, '<div><dt>h máximo</dt><dd>' + trimNum(hMax, 6) + '</dd></div><div><dt>Tolerancia</dt><dd>' + trimNum(tol, 6) + '</dd></div>') +
+          (K.exact === null ? "" : '<p class="tcap" style="margin-top:10px">Comprobación con ' + K.exactNote + ': con n = ' + nMin + ' el error real es ' + trimNum(Math.abs(K.exact - Tm.I), 8) + ' ' + (Math.abs(K.exact - Tm.I) <= tol ? '≤' : '>') + ' ' + trimNum(tol, 6) + (Math.abs(K.exact - Tm.I) <= tol ? ' ✓' : ' ✗') + '.</p>') +
+        '</div></div>';
+    }
+
+    $("erOut").innerHTML =
+      '<div class="panel" style="margin-top:22px"><div class="panel-head"><h3 class="sec">Paso 3 — Segunda derivada: máx |f″(x)| en [' + trimNum(K.a, 4) + ', ' + trimNum(K.b, 4) + ']</h3></div><div class="panel-body">' +
+        '<ul class="steplist"><li>máx |f″(x)| ≈ <b>' + trimNum(M, 6) + '</b> (se alcanza en x ≈ ' + trimNum(m2.at, 4) + '; calculado con 2001 puntos y derivadas exactas por series de Taylor)</li></ul></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Cota del error (' + (rule === "simple" ? "trapecio simple" : "trapecio compuesto, n = " + n) + ')</h3></div><div class="panel-body">' +
+        '<div class="formula">' + (rule === "simple" ? '|E| ≤ (h³/12)·máx|f″|' : '|E| ≤ (n·h³/12)·máx|f″|') + ', &nbsp; h = (b − a)/n = ' + trimNum(L, 6) + ' / ' + n + ' = ' + trimNum(h, 6) + '</div>' +
+        '<div class="formula" style="margin-top:8px">|E| ≤ ' + (rule === "simple" ? trimNum(h, 6) + '³ / 12' : n + ' · ' + trimNum(h, 6) + '³ / 12') + ' · ' + trimNum(M, 6) + ' = <b>' + trimNum(bound, K.dec) + '</b></div>' +
+        answerBox("Cota del error", "|E| ≤ " + trimNum(bound, K.dec), null, 0, err === null ? "" : '<div><dt>Error real</dt><dd>' + trimNum(err, 8) + '</dd></div><div><dt>¿Real ≤ cota?</dt><dd>' + (err <= bound * (1 + 1e-9) + 1e-15 ? "Sí ✓" : "No ✗") + '</dd></div>') +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Decimales correctos garantizados</h3></div><div class="panel-body">' +
+        '<div class="note ok"><b>Lectura</b>' + (bound < 0.1 ? 'Con esta cota el resultado ' + trimNum(T.I, K.dec) + ' tiene al menos ' + Math.floor(-Math.log10(bound) + 1e-12) + ' ' + (Math.floor(-Math.log10(bound) + 1e-12) === 1 ? 'decimal' : 'decimales') + ' correctos (error ≈ ' + bound.toExponential(2) + ').' : 'La cota es ' + trimNum(bound, 4) + ': esta aproximación no garantiza ningún decimal correcto; aumenta n.') + '</div></div></div>' + minHtml;
+  } catch(e){ showErr("er", e); }
+}
+$("erRun").addEventListener("click", erRun);
+$("erCode").innerHTML = hl(ER_PY_CODE);
+
+/* ---- navegación ---- */
+const navLinks = Array.prototype.slice.call(document.querySelectorAll(".navlink[data-view]"));
+navLinks.forEach(btn => btn.addEventListener("click", () => {
+  navLinks.forEach(b => b.removeAttribute("aria-current"));
+  btn.setAttribute("aria-current", "page");
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("is-active"));
+  $("view-" + btn.dataset.view).classList.add("is-active");
+  window.scrollTo(0, 0);
+}));
+
+/* ---- tema ---- */
+const root = document.documentElement;
+const themeLbl = $("themeLbl");
+function currentDark(){
+  const st = root.getAttribute("data-theme");
+  if (st) return st === "dark";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches;
+}
+function syncTheme(){ themeLbl.textContent = currentDark() ? "Cambiar a claro" : "Cambiar a oscuro"; }
+$("themeBtn").addEventListener("click", () => {
+  root.setAttribute("data-theme", currentDark() ? "light" : "dark");
+  syncTheme();
+});
+try{ window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncTheme); }catch(e){}
+syncTheme();
+
+</script>
+</body>
+</html>
