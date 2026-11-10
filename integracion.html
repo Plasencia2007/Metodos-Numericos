@@ -386,12 +386,13 @@ table.tdd tbody tr:hover td{ background: transparent; }
       <button class="navlink" data-view="rect"><span class="glyph" aria-hidden="true">①</span>Regla de rectángulos</button>
       <button class="navlink" data-view="simple"><span class="glyph" aria-hidden="true">②</span>Trapecio simple</button>
       <button class="navlink" data-view="comp"><span class="glyph" aria-hidden="true">③</span>Trapecio compuesto</button>
-      <button class="navlink" data-view="simpson" aria-current="page"><span class="glyph" aria-hidden="true">④</span>Simpson 1/3 compuesto</button>
+      <button class="navlink" data-view="simpson"><span class="glyph" aria-hidden="true">④</span>Simpson 1/3 compuesto</button>
+      <button class="navlink" data-view="simpson38" aria-current="page"><span class="glyph" aria-hidden="true">⑤</span>Simpson 3/8 compuesto</button>
     </div>
 
     <div class="navgroup">
       <h2>Errores</h2>
-      <button class="navlink" data-view="err"><span class="glyph" aria-hidden="true">⑤</span>Cota de error y n mínimo</button>
+      <button class="navlink" data-view="err"><span class="glyph" aria-hidden="true">⑥</span>Cota de error y n mínimo</button>
     </div>
 
     <div class="navgroup">
@@ -399,14 +400,15 @@ table.tdd tbody tr:hover td{ background: transparent; }
       <button class="navlink" id="themeBtn" type="button"><span class="glyph" aria-hidden="true">◐</span><span id="themeLbl">Claro / oscuro</span></button>
     </div>
 
-    <div class="railfoot">UPeU · Ing. de Sistemas<br>Sesiones 12 y 13 · Integración<br>Tablas recalculadas en vivo</div>
+    <div class="railfoot">UPeU · Ing. de Sistemas<br>Sesiones 12 a 14 · Integración<br>Tablas recalculadas en vivo</div>
   </nav>
 
   <main class="stage">
     <section class="view" id="view-rect"></section>
     <section class="view" id="view-simple"></section>
     <section class="view" id="view-comp"></section>
-    <section class="view is-active" id="view-simpson"></section>
+    <section class="view" id="view-simpson"></section>
+    <section class="view is-active" id="view-simpson38"></section>
     <section class="view" id="view-err"></section>
   </main>
 </div>
@@ -726,7 +728,16 @@ function plotIntegral(f, a, b, n, kind, off){
   }
   const draw = n <= 100;
   const h = (b - a) / n;
-  if (draw && kind === "simp"){
+  if (draw && kind === "s38"){
+    for (let i = 0; i + 3 <= n; i += 3){
+      const xs = [0, 1, 2, 3].map(j => a + (i + j) * h), ysv = xs.map(f);
+      const q = x => { let r = 0; for (let j = 0; j < 4; j++){ let t = ysv[j]; for (let m = 0; m < 4; m++) if (m !== j) t *= (x - xs[m]) / (xs[j] - xs[m]); r += t; } return r; };
+      const pts = [[xs[0], 0]];
+      for (let k = 0; k <= 30; k++){ const xq = xs[0] + 3 * h * k / 30; pts.push([xq, q(xq)]); }
+      pts.push([xs[3], 0]);
+      svg += '<polygon points="' + pts.map(p => sx(p[0]).toFixed(2) + "," + sy(p[1]).toFixed(2)).join(" ") + '" style="fill:var(--accent-wash);stroke:var(--accent);stroke-width:1.2"/>';
+    }
+  } else if (draw && kind === "simp"){
     for (let i = 0; i + 2 <= n; i += 2){
       const x0 = a + i * h, x1 = x0 + h, x2 = x0 + 2 * h, y0 = f(x0), y1 = f(x1), y2 = f(x2);
       const q = x => y0 * (x - x1) * (x - x2) / (2 * h * h) - y1 * (x - x0) * (x - x2) / (h * h) + y2 * (x - x0) * (x - x1) / (2 * h * h);
@@ -826,6 +837,18 @@ const VIEWS = {
       { t: "Clásico: ∫₀¹ eˣ dx, n = 4", fn: "exp(x)", a: 0, b: 1, n: 4, exact: "exp(1) - 1", ns: "2, 4, 8, 16, 32", x: { spMMode: "calc", spM: "1" } }
     ]
   },
+  s38: {
+    id: "simpson38", eyebrow: "Sesión 14 · Fórmulas de Newton-Cotes", title: "Regla de Simpson 3/8 compuesta",
+    lede: "Reemplaza la curva por cúbicas: cada grupo de tres subintervalos [x<sub>i</sub>, x<sub>i+3</sub>] se aproxima con el polinomio de Lagrange de grado 3 por cuatro puntos. Exige que n sea <em>múltiplo de 3</em> y pesos 1, 3, 3, 2, 3, 3, 2, …, 3, 3, 1: I ≈ (3h/8)·[ f(x₀) + 3·Σ f(x<sub>i</sub>) (i no múltiplo de 3) + 2·Σ f(x<sub>i</sub>) (i múltiplo de 3) + f(x<sub>n</sub>) ]. Su error también baja como h⁴: |E| ≤ (b − a)·h⁴/80 · máx|f⁽⁴⁾|.",
+    hasN: true, hasNs: true, btn: "Calcular Simpson 3/8", codeTitle: "Código en Python — Simpson 3/8 compuesto (coeficientes vectorizados y validación de n múltiplo de 3)",
+    extra: '<div class="field"><label for="s38MMode">M = máx|f⁽⁴⁾(x)|</label><select id="s38MMode"><option value="calc">M calculado (derivadas exactas)</option><option value="given">M dado (valor)</option></select></div>' +
+      '<div class="field"><label for="s38M">Valor de M (si es dado)</label><input id="s38M" type="text" value="0.45"></div>',
+    presets: [
+      { t: "Clásico: ∫₀^π sen x dx, n = 6 (exacto 2)", fn: "sin(x)", a: 0, b: "pi", n: 6, exact: "2", ns: "3, 6, 12, 24, 48", x: { s38MMode: "calc", s38M: "1" } },
+      { t: "GAA S13: potencia P(t) en [0, 6] h, n = 6 (comparar con Simpson 1/3)", fn: "10 + 5*t*sin(pi*t/6) + exp(0.2*t)", a: 0, b: 6, n: 6, exact: "60 + 180/pi + (exp(1.2) - 1)/0.2", ns: "3, 6, 12, 24, 48", x: { s38MMode: "calc", s38M: "0.45" } },
+      { t: "Clásico: ∫₀¹ eˣ dx, n = 3", fn: "exp(x)", a: 0, b: 1, n: 3, exact: "exp(1) - 1", ns: "3, 6, 12, 24, 48", x: { s38MMode: "calc", s38M: "1" } }
+    ]
+  },
   er: {
     id: "err", eyebrow: "Sesión 12 · Estimación del error cometido", title: "Cota de error y n mínimo",
     lede: "Trapecio simple: |E| ≤ (h³/12)·máx|f″(x)|. Trapecio compuesto: |E| ≤ (n·h³/12)·máx|f″(x)|, con h = (b − a)/n. Igualando la cota a una tolerancia se despeja el menor n que garantiza la precisión pedida.",
@@ -876,7 +899,7 @@ function buildView(p){
   sel.addEventListener("change", () => apply(c.presets[Number(sel.value)]));
   apply(c.presets[0]);
 }
-["rc", "ts", "tc", "sp", "er"].forEach(buildView);
+["rc", "ts", "tc", "sp", "s38", "er"].forEach(buildView);
 
 /* lectura común: función, límites, n, valor exacto */
 function common(p){
@@ -1283,7 +1306,149 @@ $("spRun").addEventListener("click", spRun);
 $("spCode").innerHTML = hl(SP_PY_CODE);
 
 /* ============================================================
-   ⑤ COTA DE ERROR Y n MÍNIMO
+   ⑤ SIMPSON 3/8 COMPUESTO
+   ============================================================ */
+function coefS38(n){
+  const c = new Array(n + 1).fill(3);
+  c[0] = 1; c[n] = 1;
+  for (let i = 3; i < n; i += 3) c[i] = 2;
+  return c;
+}
+function simpson38(f, a, b, n){
+  const h = (b - a) / n, c = coefS38(n);
+  let s = 0, tres = 0, dos = 0;
+  for (let i = 0; i <= n; i++){
+    const v = f(a + i * h);
+    s += c[i] * v;
+    if (i > 0 && i < n){ if (i % 3) tres += v; else dos += v; }
+  }
+  return { h, I: 3 * h / 8 * s, fa: f(a), fb: f(b), tres, dos };
+}
+function validarMult3(raw, nombre){
+  const v = Number(String(raw).replace(",", "."));
+  if (!Number.isInteger(v) || v < 3 || v % 3 !== 0)
+    throw new Error(nombre + " debe ser un entero múltiplo de 3: Simpson 3/8 agrupa los subintervalos de tres en tres (se recibió " + String(raw).trim() + ")");
+  return v;
+}
+const S38_PY_CODE = `import numpy as np
+
+# ==========================================================
+#  ZONA A MODIFICAR
+# ==========================================================
+def f(x):
+    return np.sin(x)
+
+A, B, N = 0, np.pi, 6
+M = 1.0                                    # cota de la 4.a derivada
+NS = [3, 6, 12, 24, 48]
+EXACTO = 2.0
+
+# ==========================================================
+#  DE AQUI PARA ABAJO NO SE TOCA NADA
+# ==========================================================
+def validar_n(n):
+    """Simpson 3/8 exige n entero y MULTIPLO DE 3; si no, detiene la ejecucion."""
+    if not isinstance(n, (int, np.integer)) or n < 3 or n % 3 != 0:
+        raise ValueError(f"n debe ser un entero multiplo de 3 (se recibio n = {n})")
+
+def simpson_38_compuesto(f, a, b, n):
+    validar_n(n)
+    h = (b - a) / n
+    x = np.linspace(a, b, n + 1)
+    coef = np.full(n + 1, 3.0)             # vector [1, 3, 3, 2, 3, 3, 2, ..., 3, 3, 1]
+    coef[0] = coef[-1] = 1
+    coef[3:-1:3] = 2                       # indices multiplos de 3 interiores
+    return 3 * h / 8 * np.dot(coef, f(x))
+
+def cota_error(a, b, n, M):
+    h = (b - a) / n
+    return (b - a) * h ** 4 / 80 * M       # |E_t| <= (b-a) h^4 / 80 * M
+
+print(f"h = {(B - A) / N}")
+print(f"I_simpson38(n={N}) = {simpson_38_compuesto(f, A, B, N):.8f}")
+print()
+print(f"{'n':>4} {'h':>8} {'Integral':>14} {'Cota |E_t|':>14} {'Error real':>12}")
+for n in NS:
+    I = simpson_38_compuesto(f, A, B, n)
+    print(f"{n:>4} {(B - A) / n:>8.4f} {I:>14.8f} {cota_error(A, B, n, M):>14.8f} {abs(EXACTO - I):>12.8f}")`;
+function s38Run(){
+  $("s38Err").textContent = "";
+  try{
+    validarMult3($("s38N").value, "n");
+    const K = common("s38");
+    const n = K.n, fmt = K.fmt, L = K.b - K.a;
+    const ns = nsList("s38");
+    ns.forEach(nn => { if (nn % 3) throw new Error("Todos los n de la lista deben ser múltiplos de 3: n = " + nn + " no lo es"); });
+    const S = simpson38(K.f, K.a, K.b, n);
+    const m4 = maxDk(K.ast, K.a, K.b, 4);
+    let M, Mtxt;
+    if ($("s38MMode").value === "calc"){
+      if (!m4) throw new Error("No se pudo calcular la cuarta derivada de f en el intervalo");
+      M = m4.M; Mtxt = "M calculado = máx|f⁽⁴⁾|";
+    } else { M = evalConst($("s38M").value, "El valor de M no es válido"); Mtxt = "M dado"; }
+    const cotaDe = nn => L * Math.pow(L / nn, 4) / 80 * M;
+    const bound = cotaDe(n);
+    const err = K.exact === null ? NaN : Math.abs(K.exact - S.I);
+
+    const full = n <= 51;
+    const coefs = coefS38(n);
+    const idxs = full ? Array.from({ length: n + 1 }, (_, i) => i) : [0, 1, 2, 3, 4, -1, n - 3, n - 2, n - 1, n];
+    let rows = "";
+    idxs.forEach(i => {
+      if (i === -1){ rows += '<tr><td colspan="5" style="text-align:center;color:var(--ink-4)">⋮ (' + (n - 8) + ' puntos intermedios)</td></tr>'; return; }
+      const ti = K.a + i * S.h, fi = K.f(ti);
+      rows += "<tr><td class=\"l\">" + i + "</td><td>" + fmt(ti) + "</td><td>" + fmt(fi) + "</td><td>" + coefs[i] + "</td><td>" + fmt(coefs[i] * fi) + "</td></tr>";
+    });
+    let sumTxt;
+    if (n <= 12){
+      const t3 = [], t2 = [];
+      for (let i = 1; i < n; i++) (i % 3 ? t3 : t2).push(fmt(K.f(K.a + i * S.h)));
+      sumTxt = "I ≈ " + fmt(3 * S.h / 8) + " · [ " + fmt(S.fa) + " + 3(" + t3.join(" + ") + ")" + (t2.length ? " + 2(" + t2.join(" + ") + ")" : "") + " + " + fmt(S.fb) + " ]";
+    } else sumTxt = "I ≈ " + fmt(3 * S.h / 8) + " · [ " + fmt(S.fa) + " + 3(" + fmt(S.tres) + ") + 2(" + fmt(S.dos) + ") + " + fmt(S.fb) + " ]";
+    const bracket = S.fa + 3 * S.tres + 2 * S.dos + S.fb;
+
+    const conv = ns.map(nn => { const R = simpson38(K.f, K.a, K.b, nn); return { n: nn, h: R.h, I: R.I, e: K.exact === null ? NaN : Math.abs(K.exact - R.I), cota: cotaDe(nn) }; });
+    let convRows = "";
+    conv.forEach((r, i) => {
+      const ratio = i > 0 && r.e > 0 ? conv[i - 1].e / r.e : NaN, expected = i > 0 ? Math.pow(r.n / conv[i - 1].n, 4) : NaN;
+      convRows += "<tr><td class=\"l\">" + r.n + "</td><td>" + trimNum(r.h, 6) + "</td><td>" + trimNum(r.I, 8) + "</td><td>" + (isFinite(r.e) ? trimNum(r.e, 8) : "—") + "</td><td>" + (K.exact ? trimNum(r.e / Math.abs(K.exact) * 100, 6) + " %" : "—") + "</td><td>" + trimNum(r.cota, 8) + "</td><td>" +
+        (isFinite(ratio) ? "÷ " + trimNum(ratio, 2) + (isFinite(expected) ? " (≈ " + trimNum(expected, 2) + ")" : "") : "—") + "</td></tr>";
+    });
+    const mBajo = m4 && $("s38MMode").value === "given" && M < m4.M * (1 - 1e-9);
+    const violada = isFinite(err) && err > bound * (1 + 1e-9);
+
+    $("s38Out").innerHTML =
+      '<div class="panel" style="margin-top:22px"><div class="panel-head"><h3 class="sec">Paso 3 — Validación de n y ancho de paso h</h3></div><div class="panel-body"><ul class="steplist">' +
+        '<li>n = ' + n + ' es un entero múltiplo de 3 ✓ (' + (n / 3) + ' grupos de tres subintervalos)</li>' +
+        '<li>h = (b − a) / n = (' + trimNum(K.b, 6) + ' − ' + parN(K.a, 6) + ') / ' + n + ' = <b>' + trimNum(S.h, 8) + '</b></li></ul></div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 4 — Tabla de evaluación y coeficientes [1, 3, 3, 2, 3, 3, 2, …, 3, 3, 1]</h3></div><div class="panel-body">' +
+        '<div class="tablewrap"><table class="data"><thead><tr><th class="l">i</th><th>x<sub>i</sub></th><th>f(x<sub>i</sub>)</th><th>Coef.</th><th>Coef. · f(x<sub>i</sub>)</th></tr></thead><tbody>' + rows + '</tbody></table></div>' +
+        (full ? "" : '<p class="tcap">Con n &gt; 51 se muestran solo los primeros y últimos puntos; el cálculo usa todos.</p>') + '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 5 — Fórmula de Simpson 3/8 compuesta</h3></div><div class="panel-body">' +
+        '<div class="formula">I ≈ (3h/8) · [ f(x<sub>0</sub>) + 3·Σ f(x<sub>i</sub>) (i no múltiplo de 3) + 2·Σ f(x<sub>i</sub>) (i múltiplo de 3) + f(x<sub>n</sub>) ]</div>' +
+        '<div class="formula" style="margin-top:8px">' + sumTxt + '</div>' +
+        '<div class="formula" style="margin-top:8px">I ≈ ' + fmt(3 * S.h / 8) + ' · ' + fmt(bracket) + ' = <b>' + trimNum(S.I, K.dec) + '</b></div>' +
+        answerBox("Simpson 3/8 (n = " + n + ")", "I ≈ " + trimNum(S.I, K.dec), K.exact, S.I, '<div><dt>h</dt><dd>' + trimNum(S.h, 6) + '</dd></div>') +
+        (K.exact === null ? "" : '<p class="tcap" style="margin-top:10px">Error medido contra ' + K.exactNote + '.</p>') + '</div></div>' +
+      plotPanel("Gráfica — f(x) y las cúbicas de Simpson 3/8 (" + (n <= 100 ? (n / 3) + " cúbicas" : "n > 100: solo se dibuja la curva") + ")", plotIntegral(K.f, K.a, K.b, n, "s38"), "Cúbicas por tramos", "Nodos x<sub>i</sub>") +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 6 — Cota superior del error: |E<sub>t</sub>| ≤ (b − a)·h⁴/80 · M</h3></div><div class="panel-body">' +
+        '<ul class="steplist"><li>' + Mtxt + ' = <b>' + trimNum(M, 6) + '</b></li>' +
+          '<li>|E<sub>t</sub>| ≤ (' + trimNum(L, 6) + ' · ' + trimNum(S.h, 6) + '⁴ / 80) · ' + trimNum(M, 6) + ' = <b>' + trimNum(bound, 8) + '</b></li>' +
+          (isFinite(err) ? '<li>Error real = ' + trimNum(err, 8) + ' → ' + (violada ? 'supera la cota ✗' : 'queda por debajo de la cota ✓') + '</li>' : '') + '</ul>' +
+        (mBajo ? '<div class="note warn"><b>El M dado es menor que el máximo real</b>El máximo de |f⁽⁴⁾| en [' + trimNum(K.a, 4) + ', ' + trimNum(K.b, 4) + '] calculado con derivadas exactas es ' + trimNum(m4.M, 6) + ' (en x ≈ ' + trimNum(m4.at, 4) + '), no ' + trimNum(M, 6) + '. Con el M real la cota correcta es ' + trimNum(bound * m4.M / M, 8) + '.</div>' :
+          (m4 ? '<p class="tcap" style="margin-top:10px">Para comparar: el máximo real de |f⁽⁴⁾| en el intervalo es ' + trimNum(m4.M, 6) + ' (en x ≈ ' + trimNum(m4.at, 4) + ').</p>' : "")) +
+      '</div></div>' +
+      '<div class="panel"><div class="panel-head"><h3 class="sec">Paso 7 — Análisis de convergencia</h3></div><div class="panel-body">' +
+        convTable(convRows, "Cota |E<sub>t</sub>| (" + (Mtxt.indexOf("dado") >= 0 ? "M dado" : "M real") + ")") +
+        '<p class="tcap" style="margin-top:10px">La última columna compara cuánto bajó el error con lo esperado por el orden O(h⁴), entre paréntesis (n / n<sub>previo</sub>)⁴: al duplicar n el error debería dividirse por ~16.</p>' +
+      '</div></div>';
+  } catch(e){ showErr("s38", e); }
+}
+$("s38Run").addEventListener("click", s38Run);
+$("s38Code").innerHTML = hl(S38_PY_CODE);
+
+/* ============================================================
+   ⑥ COTA DE ERROR Y n MÍNIMO
    ============================================================ */
 const ER_PY_CODE = `import math
 
